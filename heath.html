@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chi Tiêu Y Tế Việt Nam ‒ Mô Phỏng Chính Sách</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.276.0/dist/lucide.min.js"></script>
+  <style>
+    .cursor-pointer:hover { opacity: 0.8; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
+  <div class="max-w-6xl mx-auto p-6 space-y-6">
+    <div class="text-center space-y-4">
+      <h1 class="text-4xl font-bold text-gray-800">Chi Tiêu Y Tế Việt Nam ‒ Mô Phỏng Chính Sách</h1>
+      <p class="text-lg text-gray-600">Tương tác để xem tác động của các chính sách y tế mới</p>
+    </div>
+
+    <div id="controls" class="bg-white rounded-xl shadow-lg p-6 space-y-6">
+      <h2 class="text-xl font-semibold text-gray-800">Điều Khiển Chính Sách</h2>
+      <div class="space-y-3">
+        <label class="block text-sm font-medium text-gray-700">Đơn vị hiển thị:</label>
+        <div id="viewModeButtons" class="flex gap-3">
+          <button id="btnTrillion" class="flex items-center gap-2 px-4 py-2 rounded-lg border bg-white text-gray-700 border-gray-300 hover:bg-gray-50">
+            <i data-lucide="Calculator" class="h-4 w-4"></i> Nghìn tỷ VND
+          </button>
+          <button id="btnUsd" class="flex items-center gap-2 px-4 py-2 rounded-lg border bg-blue-600 text-white border-blue-600">
+            <i data-lucide="DollarSign" class="h-4 w-4"></i> Tỷ USD
+          </button>
+          <button id="btnPerCapita" class="flex items-center gap-2 px-4 py-2 rounded-lg border bg-white text-gray-700 border-gray-300 hover:bg-gray-50">
+            <i data-lucide="Users" class="h-4 w-4"></i> Triệu VND/người
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+        <div class="space-y-3">
+          <label class="flex items-center space-x-3">
+            <input type="checkbox" id="chkYearly" class="h-4 w-4 text-blue-600 rounded border-gray-300" />
+            <span class="text-sm font-medium text-gray-700">Thêm khám định kỳ toàn dân (+25 NkT)</span>
+          </label>
+          <p id="msgYearly" class="text-xs text-green-600 ml-7 hidden">✓ Chi NSNN tăng ~12% (so với 2022)</p>
+        </div>
+         <div class="space-y-3">
+            <label for="bhytSlider" class="block text-sm font-medium text-gray-700">
+              Tỷ lệ đóng BHYT: <span id="bhytLabel">4.5%</span>
+            </label>
+            <input type="range" id="bhytSlider" min="0" max="10" step="0.1" value="4.5"
+              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+            <div class="flex justify-between text-xs text-gray-500"><span>0%</span><span>10%</span></div>
+            <p id="msgBhyt" class="text-xs text-blue-600 hidden"></p>
+          </div>
+        <div class="space-y-3">
+          <label class="block text-sm font-medium text-gray-700">Giảm chi tiêu OOP (sau BHYT): <span id="oopLabel">0%</span></label>
+          <input type="range" id="oopSlider" min="0" max="100" step="5" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+          <div class="flex justify-between text-xs text-gray-500"><span>0%</span><span>100%</span></div>
+          <p id="msgOop" class="text-xs text-blue-600 hidden"></p>
+        </div>
+      </div>
+       <div class="border-t pt-4 mt-2">
+         <h3 class="text-md font-semibold text-gray-700 mb-3">Kịch Bản Chính Sách Nhanh:</h3>
+         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <button id="btnScenarioFreeTreatment" class="text-sm w-full px-3 py-2 rounded-lg border bg-green-500 text-white hover:bg-green-600 transition-colors">
+                Miễn phí KCB
+            </button>
+            <button id="btnScenarioFreeFull" class="text-sm w-full px-3 py-2 rounded-lg border bg-sky-500 text-white hover:bg-sky-600 transition-colors">
+                Miễn phí KCB, Thuốc, DCTT
+            </button>
+            <button id="btnResetPolicies" class="text-sm w-full px-3 py-2 rounded-lg border bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors">
+                Reset Chính Sách
+            </button>
+         </div>
+       </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Cơ Cấu Chi Tiêu Y Tế (<span id="unitLabel">tỷ USD</span>)</h2>
+        <div class="flex justify-center">
+          <svg id="sunburstSvg" width="450" height="450" class="overflow-visible"></svg>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <div class="bg-white rounded-xl shadow-lg p-4">
+          <h3 class="font-semibold text-gray-800 mb-3">Nguồn Chi Tiêu Chính</h3>
+          <div id="legendMain" class="space-y-2"></div>
+        </div>
+        <div id="legendGovContainer" class="bg-white rounded-xl shadow-lg p-4 hidden">
+          <h3 class="font-semibold text-gray-800 mb-3">Chi Tiết Chi Tiêu Chính Phủ</h3>
+          <div id="legendGov" class="space-y-2"></div>
+        </div>
+        <div id="legendOopContainer" class="bg-white rounded-xl shadow-lg p-4">
+          <h3 class="font-semibold text-gray-800 mb-3">Chi Tiết Tiền Túi</h3>
+          <div id="legendOop" class="space-y-2"></div>
+        </div>
+         <div id="legendOtherSourcesContainer" class="bg-white rounded-xl shadow-lg p-4 hidden">
+          <h3 class="font-semibold text-gray-800 mb-3">Chi Tiết Nguồn Tài Trợ Khác</h3>
+          <div id="legendOtherSources" class="space-y-2"></div>
+        </div>
+        <div id="impactSummary" class="hidden bg-gradient-to-r from-blue-600 to-green-600 rounded-xl shadow-lg p-4 text-white">
+          <h3 class="font-semibold mb-2">Tác Động Chính Sách Dự Kiến</h3>
+          <div id="impactDetails" class="space-y-1 text-sm"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>lucide.replace()</script>
+  <script>
+    let tooltipDiv = null;
+    function createTooltip() { tooltipDiv = document.createElement('div'); tooltipDiv.style.position = 'absolute'; tooltipDiv.style.pointerEvents = 'none'; tooltipDiv.style.backgroundColor = 'rgba(50,50,50,0.8)'; tooltipDiv.style.color = '#fff'; tooltipDiv.style.padding = '6px 10px'; tooltipDiv.style.borderRadius = '4px'; tooltipDiv.style.fontSize = '12px'; tooltipDiv.style.lineHeight = '1.2em'; tooltipDiv.style.visibility = 'hidden'; tooltipDiv.style.zIndex = '1000'; tooltipDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)'; document.body.appendChild(tooltipDiv); }
+    function showTooltip(html, pageX, pageY) { if (!tooltipDiv) createTooltip(); tooltipDiv.innerHTML = html; tooltipDiv.style.top = (pageY - 10) + 'px'; tooltipDiv.style.left = (pageX + 10) + 'px'; tooltipDiv.style.visibility = 'visible'; }
+    function moveTooltip(pageX, pageY) { if (!tooltipDiv) return; tooltipDiv.style.top = (pageY - 10) + 'px'; tooltipDiv.style.left = (pageX + 10) + 'px'; }
+    function hideTooltip() { if (!tooltipDiv) return; tooltipDiv.style.visibility = 'hidden'; }
+
+    const POPULATION_MILLION = 98.2;
+    const VND_PER_USD = 23500;
+
+    const baseData = { // All values in nghìn tỷ VND
+      outOfPocket: 173.3,
+      treatment: 81.1, 
+      medicine: 50.0,  
+      voluntaryInsurancePurchase: 34.4, 
+      medicalEquipment: 7.6,    
+      
+      foreignAid: 7.0,
+      voluntaryHealthInsuranceFund: 24.1, 
+      otherHealthcareSpending: 38.6,   
+    };
+
+    const govSplit = {
+      bhyt_at_4_5_percent: 112.6, 
+      directTransfer: 82.8 
+    };
+    const baseTotalGovernment2022 = govSplit.bhyt_at_4_5_percent + govSplit.directTransfer; 
+
+    const defaultState = {
+      viewMode: 'usd',
+      addYearlyCheckup: false,
+      oopReduction: 0, 
+      bhytRate: 4.5    
+    };
+    let state = { ...defaultState };
+    let computedData = null;
+
+    function formatValue(valueTrillionVND, decimals = 1) {
+      if (isNaN(valueTrillionVND) || valueTrillionVND === null) return 'N/A';
+      switch (state.viewMode) {
+        case 'usd': return ((valueTrillionVND * 1000) / VND_PER_USD).toFixed(decimals);
+        case 'perCapita': return ((valueTrillionVND * 1e12) / (POPULATION_MILLION * 1e6) / 1e6).toFixed(decimals > 1 ? decimals : 2);
+        default: return valueTrillionVND.toFixed(decimals);
+      }
+    }
+    function getUnitLabel() {
+      switch (state.viewMode) {
+        case 'usd': return 'tỷ USD';
+        case 'perCapita': return 'triệu VND/người';
+        default: return 'nghìn tỷ VND';
+      }
+    }
+
+    function computeAllData() {
+      const d = {
+        foreignAid: baseData.foreignAid,
+        voluntaryHealthInsuranceFund: baseData.voluntaryHealthInsuranceFund,
+        otherHealthcareSpending: baseData.otherHealthcareSpending,
+      };
+
+      // 1. BHYT Fund Calculation
+      d.government_bhyt = govSplit.bhyt_at_4_5_percent * (state.bhytRate / 4.5);
+      const bhyt_fund_change_from_baseline = d.government_bhyt - govSplit.bhyt_at_4_5_percent;
+
+      // 2. OOP affected by BHYT change
+      let oop_after_bhyt_effect = baseData.outOfPocket - bhyt_fund_change_from_baseline;
+      oop_after_bhyt_effect = Math.max(0, oop_after_bhyt_effect); 
+
+      d.oop_reduction_due_to_bhyt_increase = Math.max(0, baseData.outOfPocket - oop_after_bhyt_effect);
+      d.oop_increase_due_to_bhyt_decrease = Math.max(0, oop_after_bhyt_effect - baseData.outOfPocket);
+
+      // 3. OOP Slider applies to this new OOP baseline (oop_after_bhyt_effect)
+      const oop_reduction_target_by_slider = oop_after_bhyt_effect * (state.oopReduction / 100);
+      d.gov_compensation_for_oop_slider = oop_reduction_target_by_slider; 
+      
+      d.outOfPocket = Math.max(0, oop_after_bhyt_effect - oop_reduction_target_by_slider);
+
+      // 4. Government Direct Transfer
+      const yearly_checkup_cost = state.addYearlyCheckup ? 25 : 0;
+      d.government_direct_transfer = govSplit.directTransfer + yearly_checkup_cost + d.gov_compensation_for_oop_slider;
+      
+      // 5. Totals
+      d.government_total = d.government_bhyt + d.government_direct_transfer;
+      d.other_funding_total = d.foreignAid + d.voluntaryHealthInsuranceFund + d.otherHealthcareSpending;
+      d.total = d.government_total + d.outOfPocket + d.other_funding_total;
+
+      // 6. OOP Breakdown Scaling
+      const final_oop_scale_factor = (baseData.outOfPocket > 0) ? (d.outOfPocket / baseData.outOfPocket) : 0;
+      d.treatment = baseData.treatment * final_oop_scale_factor;
+      d.medicine = baseData.medicine * final_oop_scale_factor;
+      d.voluntaryInsurancePurchase = baseData.voluntaryInsurancePurchase * final_oop_scale_factor;
+      d.medicalEquipment = baseData.medicalEquipment * final_oop_scale_factor;
+
+      const sunburstData = [
+        { name: 'Chi tiêu chính phủ', value: d.government_total, color: '#3B82F6', breakdownKey: 'govBreakdown' }, 
+        { name: 'Tiền túi cá nhân', value: d.outOfPocket, color: '#EF4444', breakdownKey: 'oopBreakdown' },       
+        { name: 'Nguồn tài trợ khác', value: d.other_funding_total, color: '#06B6D4', breakdownKey: 'otherSourcesBreakdown' } 
+      ];
+      
+      let currentAngle = 0;
+      sunburstData.forEach(item => {
+        item.percentage = d.total > 0 ? ((item.value / d.total) * 100).toFixed(1) : '0.0';
+        const angleSpan = d.total > 0 ? (item.value / d.total) * 360 : 0;
+        item.startAngle = currentAngle; item.endAngle = currentAngle + angleSpan; currentAngle += angleSpan;
+      });
+
+      const govBreakdown = [
+        { name: 'Quỹ BHYT', value: d.government_bhyt, color: '#274DB6' },
+        { name: 'Chuyển giao trực tiếp', value: d.government_direct_transfer, color: '#3265D2' }
+      ];
+      const oopBreakdown = [
+        { name: 'Khám chữa bệnh', value: d.treatment, color: '#E15480' },
+        { name: 'Thuốc tự chữa & dự phòng', value: d.medicine, color: '#E56F98' },
+        { name: 'Mua bảo hiểm tự nguyện', value: d.voluntaryInsurancePurchase, color: '#E88BAD' },
+        { name: 'Dụng cụ y tế', value: d.medicalEquipment, color: '#F1ABC1' }
+      ];
+      const otherSourcesBreakdown = [
+        { name: 'Quỹ BHXH/BHTN', value: d.voluntaryHealthInsuranceFund, color: '#22D3EE' }, 
+        { name: 'Viện trợ quốc tế', value: d.foreignAid, color: '#67E8F9' },                   
+        { name: 'Các nguồn chi khác', value: d.otherHealthcareSpending, color: '#A5F3FC' }    
+      ];
+      
+      [govBreakdown, oopBreakdown, otherSourcesBreakdown].forEach((breakdown, index) => {
+        const parentSlice = sunburstData[index];
+        if (!parentSlice || parentSlice.value <= 0.001 && !(parentSlice.name === 'Tiền túi cá nhân' && parentSlice.value === 0) ) return;
+        let subCurrentAngle = parentSlice.startAngle;
+        const parentAngleSpan = parentSlice.endAngle - parentSlice.startAngle;
+        const parentValue = parentSlice.value;
+
+        breakdown.forEach(item => {
+          item.percentage = parentValue > 0 ? ((item.value / parentValue) * 100).toFixed(1) : (item.value === 0 ? '0.0' : 'N/A');
+          if (parentValue < 0.001 && item.value > 0) item.percentage = '100.0';
+          const angleSpan = parentValue > 0 ? (item.value / parentValue) * parentAngleSpan : (parentAngleSpan > 0 && item.value === 0 ? 0 : parentAngleSpan / (breakdown.filter(b => b.value === 0).length || 1) ); // Distribute angle if parent is 0 but children exist
+          item.startAngle = subCurrentAngle; item.endAngle = subCurrentAngle + angleSpan; subCurrentAngle += angleSpan;
+        });
+      });
+      return { raw: d, sunburstData, govBreakdown, oopBreakdown, otherSourcesBreakdown };
+    }
+
+    function drawSunburst() { 
+        computedData = computeAllData();
+        const svg = document.getElementById('sunburstSvg');
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+        const width = svg.getAttribute('width');
+        const height = svg.getAttribute('height');
+        const cx = width / 2;
+        const cy = height / 2;
+        const radiusConfig = { center: 0, ring1Inner: 50, ring1Outer: 100, ring2Outer: 150 };
+
+        const namespace = "http://www.w3.org/2000/svg";
+        const gRoot = document.createElementNS(namespace, 'g');
+        gRoot.setAttribute('transform', `translate(${cx}, ${cy}) rotate(-90)`);
+        svg.appendChild(gRoot);
+
+        function toRad(deg) { return (deg * Math.PI) / 180; }
+
+        function drawRing(segments, innerR, outerR) {
+            segments.forEach(item => {
+            if (item.value < 0 && !(item.name === 'Tiền túi cá nhân' && computedData.raw.outOfPocket === 0)) { // Allow OOP to be zero, but not negative for drawing
+                 console.warn("Skipping draw for negative value item:", item.name, item.value);
+                 return;
+            }
+            if (item.value <= 0.001 && !(item.name === 'Tiền túi cá nhân' && computedData.raw.outOfPocket === 0)) return;
+            
+            const a0 = toRad(item.startAngle); const a1 = toRad(item.endAngle);
+            // Ensure a1 is greater than a0 for tiny or zero slices to avoid weird arcs
+            const effectiveA1 = (item.endAngle - item.startAngle < 0.01 && item.value === 0) ? a0 + 0.01 : a1;
+            const largeArc = (effectiveA1 - a0 > Math.PI) ? 1 : 0; // Use radians for largeArc check
+
+            const x1_i = innerR * Math.cos(a0); const y1_i = innerR * Math.sin(a0);
+            const x2_o = outerR * Math.cos(a0); const y2_o = outerR * Math.sin(a0);
+            const x3_o = outerR * Math.cos(effectiveA1); const y3_o = outerR * Math.sin(effectiveA1);
+            const x4_i = innerR * Math.cos(effectiveA1); const y4_i = innerR * Math.sin(effectiveA1);
+            const pathData = `M ${x1_i} ${y1_i} L ${x2_o} ${y2_o} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x3_o} ${y3_o} L ${x4_i} ${y4_i} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1_i} ${y1_i} Z`;
+            
+            const path = document.createElementNS(namespace, 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', item.color);
+            path.setAttribute('stroke', 'white');
+            path.setAttribute('stroke-width', '1.5'); 
+            path.classList.add('cursor-pointer');
+            
+            const isMainRing = innerR === radiusConfig.ring1Inner;
+            const tooltipText = `<strong>${item.name}</strong><br/>${formatValue(item.value)} ${getUnitLabel()}<br/>[${item.percentage}% của ${isMainRing ? 'tổng' : 'mục cha'}]`;
+            path.addEventListener('mouseover', evt => { showTooltip(tooltipText, evt.pageX, evt.pageY); path.style.opacity = '0.8'; });
+            path.addEventListener('mousemove', evt => moveTooltip(evt.pageX, evt.pageY));
+            path.addEventListener('mouseout', () => { hideTooltip(); path.style.opacity = '1'; });
+            gRoot.appendChild(path);
+
+            const angleSpanDegrees = item.endAngle - item.startAngle;
+            if (item.value > 0.01 && angleSpanDegrees > 7) { 
+                const midAngleDeg = (item.startAngle + item.endAngle) / 2;
+                const midAngleRad = toRad(midAngleDeg);
+                const labelR = (innerR + outerR) / 2; 
+                const tx = labelR * Math.cos(midAngleRad); 
+                const ty = labelR * Math.sin(midAngleRad);
+                
+                let finalRotation = midAngleDeg;
+                if (midAngleDeg > 90 && midAngleDeg < 270) { 
+                    finalRotation += 180;
+                }
+                
+                const txt = document.createElementNS(namespace, 'text');
+                txt.setAttribute('x', tx); txt.setAttribute('y', ty);
+                const lightColors = ['#A5F3FC', '#F1ABC1', '#67E8F9']; 
+                txt.setAttribute('fill', lightColors.includes(item.color.toUpperCase()) ? '#083344' : 'white'); 
+                txt.setAttribute('font-size', '9'); 
+                txt.setAttribute('font-weight', 'bold');
+                txt.setAttribute('text-anchor', 'middle');
+                txt.setAttribute('dy', '.35em');
+                txt.setAttribute('transform', `rotate(${finalRotation} ${tx} ${ty})`);
+                txt.textContent = item.percentage + '%'; 
+                gRoot.appendChild(txt);
+            }
+            });
+        }
+
+        drawRing(computedData.sunburstData, radiusConfig.ring1Inner, radiusConfig.ring1Outer);
+        if (computedData.sunburstData[0]?.value > 0.001) drawRing(computedData.govBreakdown, radiusConfig.ring1Outer, radiusConfig.ring2Outer);
+        if (computedData.sunburstData[1]?.value >= 0) drawRing(computedData.oopBreakdown, radiusConfig.ring1Outer, radiusConfig.ring2Outer); 
+        if (computedData.sunburstData[2]?.value > 0.001) drawRing(computedData.otherSourcesBreakdown, radiusConfig.ring1Outer, radiusConfig.ring2Outer);
+
+
+        const centerTextGroup = document.createElementNS(namespace, 'g');
+        centerTextGroup.setAttribute('transform', `translate(${cx}, ${cy})`);
+        svg.appendChild(centerTextGroup);
+        const totalVal = computedData.raw.total;
+        const t1 = document.createElementNS(namespace, 'text'); t1.setAttribute('x', 0); t1.setAttribute('y', -10); t1.setAttribute('text-anchor', 'middle'); t1.setAttribute('fill', '#374151'); t1.setAttribute('font-size', '14'); t1.setAttribute('font-weight', 'bold'); t1.textContent = 'Tổng Chi Tiêu'; centerTextGroup.appendChild(t1);
+        const t2 = document.createElementNS(namespace, 'text'); t2.setAttribute('x', 0); t2.setAttribute('y', 10); t2.setAttribute('text-anchor', 'middle'); t2.setAttribute('fill', '#1F2937'); t2.setAttribute('font-size', '18'); t2.setAttribute('font-weight', 'bold'); t2.textContent = formatValue(totalVal); centerTextGroup.appendChild(t2);
+        const t3 = document.createElementNS(namespace, 'text'); t3.setAttribute('x', 0); t3.setAttribute('y', 30); t3.setAttribute('text-anchor', 'middle'); t3.setAttribute('fill', '#6B7280'); t3.setAttribute('font-size', '12'); t3.textContent = getUnitLabel(); centerTextGroup.appendChild(t3);
+        
+        updateLegendsAndImpact();
+    }
+    
+
+    function updateLegendsAndImpact() {
+      document.getElementById('unitLabel').textContent = getUnitLabel();
+      const currentUnitSuffix = " " + getUnitLabel();
+      const overallTotal = computedData.raw.total; 
+
+      function populateLegend(legendEl, data, parentContainerEl) {
+        legendEl.innerHTML = '';
+        let hasVisibleItems = false;
+        if (data && data.length > 0) { 
+            data.forEach(item => {
+            const shouldShowItem = item.value >= 0 || (item.name === 'Tiền túi cá nhân' && item.value === 0);
+            if (!shouldShowItem && item.value < 0) return; 
+            
+            hasVisibleItems = true;
+            const row = document.createElement('div'); row.classList.add('flex','items-center','justify-between','text-sm');
+            const left = document.createElement('div'); left.classList.add('flex','items-center','gap-2');
+            const dot = document.createElement('div'); dot.classList.add('w-3','h-3','rounded'); dot.style.backgroundColor = item.color;
+            const nameSpan = document.createElement('span'); nameSpan.textContent = item.name; left.append(dot, nameSpan);
+            
+            const right = document.createElement('div'); right.classList.add('text-right');
+            const valDiv = document.createElement('div'); valDiv.classList.add('font-medium'); 
+            valDiv.textContent = formatValue(item.value) + currentUnitSuffix; 
+            
+            const pctDiv = document.createElement('div'); pctDiv.classList.add('text-gray-500','text-xs');
+            const percentageOfTotal = overallTotal > 0 ? ((item.value / overallTotal) * 100).toFixed(1) : (item.value === 0 ? '0.0' : 'N/A');
+            pctDiv.textContent = percentageOfTotal + '%'; 
+            
+            right.append(valDiv, pctDiv);
+            row.append(left, right); legendEl.appendChild(row);
+            });
+        }
+        parentContainerEl.classList.toggle('hidden', !hasVisibleItems);
+      }
+
+      populateLegend(document.getElementById('legendMain'), computedData.sunburstData, document.getElementById('legendMain').parentElement);
+      populateLegend(document.getElementById('legendGov'), computedData.govBreakdown, document.getElementById('legendGovContainer'));
+      populateLegend(document.getElementById('legendOop'), computedData.oopBreakdown, document.getElementById('legendOopContainer'));
+      populateLegend(document.getElementById('legendOtherSources'), computedData.otherSourcesBreakdown, document.getElementById('legendOtherSourcesContainer'));
+      
+      const impact = document.getElementById('impactSummary');
+      const details = document.getElementById('impactDetails');
+      details.innerHTML = '';
+      const isPolicyActive = state.addYearlyCheckup || state.oopReduction > 0 || state.bhytRate !== 4.5;
+      impact.classList.toggle('hidden', !isPolicyActive);
+
+      if (isPolicyActive) {
+        let scenarioGovSpending = computedData.raw.government_total;
+        let initialImpactMessage = "";
+
+        if (state.addYearlyCheckup) {
+          initialImpactMessage = `✓ Khám định kỳ (+${formatValue(25)}${currentUnitSuffix}). `;
+        }
+
+        // BHYT Impact
+        const bhytFundChangeRaw = computedData.raw.government_bhyt - govSplit.bhyt_at_4_5_percent;
+        if (Math.abs(bhytFundChangeRaw) > 0.01) {
+            initialImpactMessage += `✓ Tỷ lệ BHYT ${state.bhytRate}% (Quỹ BHYT ${bhytFundChangeRaw >=0 ? '+':''}${formatValue(bhytFundChangeRaw)}${currentUnitSuffix}). `;
+            if (computedData.raw.oop_reduction_due_to_bhyt_increase > 0.01) {
+                initialImpactMessage += `Giúp giảm OOP: -${formatValue(computedData.raw.oop_reduction_due_to_bhyt_increase)}${currentUnitSuffix}. `;
+            } else if (computedData.raw.oop_increase_due_to_bhyt_decrease > 0.01) {
+                 initialImpactMessage += `Làm tăng OOP: +${formatValue(computedData.raw.oop_increase_due_to_bhyt_decrease)}${currentUnitSuffix}. `;
+            }
+        }
+        
+        // OOP Slider Impact
+        if (state.oopReduction > 0 && computedData.raw.gov_compensation_for_oop_slider > 0.01) {
+             initialImpactMessage += `✓ Giảm OOP bằng NSNN (+${formatValue(computedData.raw.gov_compensation_for_oop_slider)}${currentUnitSuffix}). `;
+        } else if (state.oopReduction > 0) {
+             initialImpactMessage += `✓ Mục tiêu giảm OOP ${state.oopReduction}% cơ bản được BHYT bù đắp hoặc đã đạt. `;
+        }
+        
+        if(initialImpactMessage) details.insertAdjacentHTML('beforeend', `<div>${initialImpactMessage.trim()}</div>`);
+
+        // Narrative for "Free" scenarios based on final OOP components
+        const oopTreatmentCost = baseData.treatment; // 81.1 NkT
+        const oopMedicineAndEquipmentCost = baseData.medicine + baseData.medicalEquipment; // 50.0 + 7.6 = 57.6 NkT
+        
+        let narrativeMsg = "";
+        // Check if KCB is effectively free (remaining OOP treatment is very small)
+        if (computedData.raw.treatment < 0.1) { 
+            if (computedData.raw.medicine < 0.1 && computedData.raw.medicalEquipment < 0.1) { // Also medicine and equipment free
+                 narrativeMsg = `Kịch bản miễn phí KCB, Thuốc & DCTT: Tổng chi NSNN là <strong>${formatValue(scenarioGovSpending)}${currentUnitSuffix}</strong> (gấp ~${(scenarioGovSpending / baseTotalGovernment2022).toFixed(1)} lần năm 2022).`;
+            } else { // Only KCB is free
+                 narrativeMsg = `Kịch bản miễn phí KCB: Tổng chi NSNN là <strong>${formatValue(scenarioGovSpending)}${currentUnitSuffix}</strong> (gấp ~${(scenarioGovSpending / baseTotalGovernment2022).toFixed(1)} lần năm 2022).`;
+            }
+        }
+
+        if (narrativeMsg) {
+            details.insertAdjacentHTML('beforeend', `<div class="mt-1 pt-1 border-t border-white/30">${narrativeMsg}</div>`);
+        } else if (isPolicyActive) { // General summary if no specific "free" scenario is met
+             details.insertAdjacentHTML('beforeend', `<div class="mt-1 pt-1 border-t border-white/30">Tổng chi NSNN hiện tại: <strong>${formatValue(scenarioGovSpending)}${currentUnitSuffix}</strong> (thay đổi ${((scenarioGovSpending / baseTotalGovernment2022 - 1) * 100).toFixed(0)}% so với 2022).</div>`);
+        }
+      }
+    }
+    
+    function updateUIFromState() {
+        document.getElementById('chkYearly').checked = state.addYearlyCheckup;
+        document.getElementById('bhytSlider').value = state.bhytRate;
+        document.getElementById('bhytLabel').textContent = state.bhytRate + "%";
+        document.getElementById('oopSlider').value = state.oopReduction;
+        document.getElementById('oopLabel').textContent = state.oopReduction + '%';
+
+        // Update messages based on new state
+        document.getElementById('msgYearly').classList.toggle('hidden', !state.addYearlyCheckup);
+        
+        const msgBhytEl = document.getElementById('msgBhyt');
+        const bhytFundChange = (govSplit.bhyt_at_4_5_percent * (state.bhytRate / 4.5)) - govSplit.bhyt_at_4_5_percent;
+        if (Math.abs(bhytFundChange) > 0.01 || state.bhytRate === 0) { 
+            msgBhytEl.textContent = `→ Quỹ BHYT thay đổi: ${bhytFundChange >=0 ? '+':''}${formatValue(bhytFundChange)} ${getUnitLabel()}. Tác động trực tiếp đến OOP.`;
+            msgBhytEl.classList.remove('hidden');
+        } else { msgBhytEl.classList.add('hidden'); }
+
+        const msgOopEl = document.getElementById('msgOop');
+         if (state.oopReduction > 0) {
+            // Temporarily calculate oop_after_bhyt_effect for message
+            let temp_oop_after_bhyt = baseData.outOfPocket - bhytFundChange;
+            temp_oop_after_bhyt = Math.max(0, temp_oop_after_bhyt);
+            const potentialReduction = temp_oop_after_bhyt * (state.oopReduction/100);
+            msgOopEl.textContent = `Mục tiêu giảm thêm ${formatValue(potentialReduction)} ${getUnitLabel()} từ OOP (sau BHYT).`;
+            msgOopEl.classList.remove('hidden');
+        } else { msgOopEl.classList.add('hidden'); }
+
+        drawSunburst();
+    }
+
+
+    document.getElementById('btnTrillion').addEventListener('click', () => { state.viewMode = 'trillion'; updateViewModeButtons(); updateUIFromState(); });
+    document.getElementById('btnUsd').addEventListener('click', () => { state.viewMode = 'usd'; updateViewModeButtons(); updateUIFromState(); });
+    document.getElementById('btnPerCapita').addEventListener('click', () => { state.viewMode = 'perCapita'; updateViewModeButtons(); updateUIFromState(); });
+    function updateViewModeButtons() { const modes = [ { id: 'btnTrillion', mode: 'trillion' }, { id: 'btnUsd', mode: 'usd' }, { id: 'btnPerCapita', mode: 'perCapita' }]; modes.forEach(m => { const btn = document.getElementById(m.id); const isActive = state.viewMode === m.mode; btn.classList.toggle('bg-blue-600', isActive); btn.classList.toggle('text-white', isActive); btn.classList.toggle('border-blue-600', isActive); btn.classList.toggle('bg-white', !isActive); btn.classList.toggle('text-gray-700', !isActive); btn.classList.toggle('border-gray-300', !isActive); btn.classList.toggle('hover:bg-gray-50', !isActive); }); document.getElementById('unitLabel').textContent = getUnitLabel(); }
+
+    document.getElementById('chkYearly').addEventListener('change', e => { state.addYearlyCheckup = e.target.checked; updateUIFromState(); });
+    document.getElementById('oopSlider').addEventListener('input', e => { state.oopReduction = Number(e.target.value); updateUIFromState(); });
+    document.getElementById('bhytSlider').addEventListener('input', e => { state.bhytRate = Number(e.target.value); updateUIFromState(); });
+    
+    document.getElementById('btnResetPolicies').addEventListener('click', () => {
+        state = { ...defaultState };
+        updateUIFromState();
+    });
+
+    document.getElementById('btnScenarioFreeTreatment').addEventListener('click', () => {
+        state.addYearlyCheckup = true;
+        // state.bhytRate stays as is or default
+        // Calculate OOP after BHYT effect
+        const bhytFundChange = (govSplit.bhyt_at_4_5_percent * (state.bhytRate / 4.5)) - govSplit.bhyt_at_4_5_percent;
+        let oop_after_bhyt = baseData.outOfPocket - bhytFundChange;
+        oop_after_bhyt = Math.max(0, oop_after_bhyt);
+
+        // Target to make baseData.treatment (81.1) effectively zero from oop_after_bhyt
+        // The slider needs to reduce oop_after_bhyt by an amount that corresponds to making 
+        // the 'treatment' portion of it zero.
+        // If oop_after_bhyt is X, and treatment portion of original OOP (81.1) is T_orig,
+        // then treatment portion of oop_after_bhyt is approx T_orig * (X / baseData.outOfPocket).
+        // We want this portion to be reduced.
+        
+        const targetReductionAmount = baseData.treatment; // We want to eliminate this amount from the original OOP.
+                                                       // The slider works on oop_after_bhyt_effect.
+        if (oop_after_bhyt > 0) {
+            // How much of oop_after_bhyt_effect needs to be reduced to cover the original treatment cost?
+            // This is tricky because the slider applies a % to oop_after_bhyt_effect.
+            // We want oop_after_bhyt_effect * (1 - oopReduction/100) to be oop_after_bhyt_effect - (scaled treatment cost)
+            // For simplicity, let's aim to reduce oop_after_bhyt by an amount that, if it were taken from original OOP, would be 81.1
+            // This means the slider should aim to remove baseData.treatment from oop_after_bhyt_effect.
+            state.oopReduction = Math.min(100, Math.max(0, (targetReductionAmount / oop_after_bhyt) * 100));
+             // More direct: we want final OOP to be baseData.outOfPocket - baseData.treatment (after BHYT already applied reduction)
+             // So, reduction needed from oop_after_bhyt is oop_after_bhyt - (baseData.outOfPocket - targetReductionAmount - (baseData.outOfPocket - oop_after_bhyt))
+             // This is complex. Simpler: target what's left of treatment.
+             const oop_scale_temp = oop_after_bhyt / baseData.outOfPocket;
+             const treatment_left_in_oop_after_bhyt = baseData.treatment * oop_scale_temp;
+             state.oopReduction = oop_after_bhyt > 0 ? Math.min(100, Math.max(0, (treatment_left_in_oop_after_bhyt / oop_after_bhyt) * 100)) : 0;
+
+
+        } else { state.oopReduction = 0; }
+        state.oopReduction = Math.round(state.oopReduction / 5) * 5; // Snap to slider steps
+        updateUIFromState();
+    });
+
+    document.getElementById('btnScenarioFreeFull').addEventListener('click', () => {
+        state.addYearlyCheckup = true;
+        const bhytFundChange = (govSplit.bhyt_at_4_5_percent * (state.bhytRate / 4.5)) - govSplit.bhyt_at_4_5_percent;
+        let oop_after_bhyt = baseData.outOfPocket - bhytFundChange;
+        oop_after_bhyt = Math.max(0, oop_after_bhyt);
+
+        const targetReductionAmount = baseData.treatment + baseData.medicine + baseData.medicalEquipment;
+        
+        // Similar to above, target reduction of these components from oop_after_bhyt
+        const oop_scale_temp = oop_after_bhyt / baseData.outOfPocket;
+        const components_to_reduce_left_in_oop_after_bhyt = targetReductionAmount * oop_scale_temp;
+
+        state.oopReduction = oop_after_bhyt > 0 ? Math.min(100, Math.max(0, (components_to_reduce_left_in_oop_after_bhyt / oop_after_bhyt) * 100)) : 0;
+        state.oopReduction = Math.round(state.oopReduction / 5) * 5; // Snap to slider steps
+        updateUIFromState();
+    });
+
+    updateUIFromState(); // Initial call
+  </script>
+</body>
+</html>
