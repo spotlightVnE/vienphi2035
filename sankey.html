@@ -622,6 +622,19 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
           nodeGroup.selectAll("rect").style("fill-opacity", n => n.step === 2 ? 0.25 : 1);
           nodeGroup.selectAll("text").style("fill-opacity", 1);
           hideTooltip();
+        })
+        .on("pointerdown", (event) => {
+          if (window.innerWidth <= MOBILE_BREAKPOINT) {
+            activeToggledNodeId = null;
+            hideTooltip();
+            // clear highlights
+            gNodeGroup && gNodeGroup.selectAll('rect')
+              .style('fill-opacity', n => n.step === 2 ? 0.25 : 1)
+              .attr('stroke-width',1)
+              .attr('stroke','var(--border)');
+            gLinkGroup && gLinkGroup.selectAll('path').style('stroke-opacity',0.4);
+            d3.selectAll('text.step2').classed('active', false);
+          }
         });
 
       const nodeGroup = svg.append("g").attr("class", "nodes");
