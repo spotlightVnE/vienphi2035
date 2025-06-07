@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Luồng Tài Chính Y Tế Việt Nam – Năm 2022 (SHA 2011)</title>
+  <title>Tài chính y tế Việt Nam</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Google Fonts -->
@@ -111,61 +111,6 @@
       line-height: 1.5;
     }
 
-    /* Legend */
-    .legend {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 30px;
-      margin: 30px 0;
-      padding: 20px;
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
-      flex-wrap: wrap;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      color: var(--text-secondary);
-      transition: transform 0.2s ease;
-    }
-
-    .legend-item:hover {
-      transform: scale(1.05);
-    }
-
-    .legend-color {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .legend-color::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-      animation: shine 2s infinite;
-    }
-
-    @keyframes shine {
-      0% { left: -100%; }
-      100% { left: 100%; }
-    }
 
     /* Main container */
     .main-container {
@@ -179,20 +124,7 @@
       background: var(--card-bg);
       border-radius: 16px;
       border: 1px solid var(--border);
-      padding: 30px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .sankey-container {
-      width: 100%;
-      max-width: 1400px;
-      margin: 0 auto;
-      background: var(--card-bg);
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      padding: 30px;
+      padding: 30px; /* Default padding */
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
       position: relative;
       overflow: hidden;
@@ -200,18 +132,16 @@
 
     .chart-wrapper {
       width: 100%;
-      max-width: 1400px;
+      max-width: 1400px; /* Max width of the chart itself */
       margin: 0 auto;
-      overflow: auto;
+      overflow: hidden; /* Clip overflow and remove horizontal scroll bar */
       border-radius: 8px;
     }
 
     svg {
       display: block;
-      width: 100%;
-      height: 72vh;
+      /* width and height will be set by D3 */
       background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
-      min-width: 0;
     }
 
     /* Sankey elements */
@@ -251,17 +181,16 @@
       stroke-width: 2px;
       stroke: var(--accent-blue);
       filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4));
-      transform: scale(1.02);
+      transform: scale(1.02); /* Keep or remove based on preference */
     }
 
     .node text {
-      font-size: 14px;
-      font-weight: 600;
+      /* Font size set dynamically in JS */
+      font-weight: 600; /* Base weight, can be adjusted in JS */
       pointer-events: none;
-      text-anchor: auto;
-      text-align: match-parent;
+      text-anchor: auto; /* Set dynamically in JS */
       font-family: "Inter", sans-serif;
-      fill: var(--text-primary);
+      fill: var(--text-primary); /* Base color, can be adjusted in JS */
       text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
     }
 
@@ -270,7 +199,7 @@
       position: absolute;
       background: #23293a;
       border: none;
-      border-radius: 0;
+      border-radius: 0; /* Changed from 8px */
       padding: 14px 18px;
       font-size: 14px;
       color: #fff;
@@ -356,36 +285,69 @@
     }
 
     /* Responsive */
+    .che-underline {
+      text-decoration: underline;
+      cursor: help;
+    }
     @media (max-width: 768px) {
       .header {
-        padding: 30px 15px;
+        padding: 20px 10px 20px 10px; /* Reduced padding */
+      }
+      .title {
+        font-size: clamp(20px, 5vw, 28px); /* Slightly smaller title */
+      }
+      .subtitle {
+        font-size: 14px; /* Slightly smaller subtitle */
       }
       
-      .legend {
-        flex-direction: column;
-        gap: 15px;
-      }
       
       .main-container {
-        padding: 15px;
+        padding: 10px; /* Significantly reduced padding */
       }
       
       .sankey-container {
-        padding: 20px;
+        padding: 5px; /* Significantly reduced padding */
+        border-radius: 8px; /* Slightly smaller border radius */
+      }
+
+      .chart-wrapper {
+        border-radius: 6px; /* Match inner container */
       }
 
       .tooltip {
-        max-width: 250px;
-        min-width: 170px;
-        padding: 16px 20px;
+        max-width: 200px; /* Adjust tooltip size for mobile */
+        min-width: 140px;
+        padding: 10px 12px; /* Smaller tooltip padding */
+        font-size: 12px;
       }
-
-      .tooltip-title {
-        font-size: 14px;
+      .tooltip-title { /* Assuming you might add classes like this in JS for tooltip content */
+        font-size: 13px;
       }
-
       .tooltip-value {
-        font-size: 16px;
+        font-size: 15px;
+      }
+
+      .stats-panel {
+        margin-top: 20px;
+        gap: 10px;
+      }
+      .stat-card {
+        padding: 15px;
+      }
+      .stat-value {
+        font-size: 20px;
+      }
+      .stat-label {
+        font-size: 12px;
+      }
+
+      /* Hide step-2 labels on mobile */
+      text.step2 {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      text.step2.active {
+        opacity: 1;
       }
     }
   </style>
@@ -395,13 +357,10 @@
   <!-- Animated background -->
   <div class="bg-particles" id="particles"></div>
 
-
-
-
   <!-- Main Container -->
   <div class="main-container">
-    <h2 style="text-align:center; font-size: 1.5rem; font-weight: 600; margin: 40px auto 24px auto; color: #F8FAFC;">
-      Trong năm 2022, Việt Nam đã chi 438,2 nghìn tỷ cho y tế.
+    <h2 style="text-align:center; font-size: 1.2rem; font-weight: 600; margin: 20px auto 15px auto; color: #F8FAFC;">
+      Trong năm 2022, Việt Nam đã chi <span id="che-amount" class="che-underline">438,2 nghìn tỷ</span> cho y tế.
     </h2>
     <!-- Sankey Chart -->
     <div class="sankey-container">
@@ -409,7 +368,7 @@
         <svg id="sankey"></svg>
       </div>
     </div>
-    <div style="margin: 40px auto 20px auto; max-width: 800px; color: #94a3b8; font-size: 13px; text-align: center; line-height: 1.5;">
+    <div style="margin: 20px auto 10px auto; max-width: 800px; color: #94a3b8; font-size: 11px; text-align: center; line-height: 1.4;">
       <b>Phương pháp:</b> Dữ liệu dòng tài chính y tế dựa trên Hệ thống Tài khoản Y tế (SHA 2011), phân loại các nguồn chi, phương thức và điểm đến cuối cùng của chi tiêu.<br>
       <b>Nguồn:</b> Bộ Y tế Việt Nam (2024), Báo cáo Tổng hợp Tài chính Y tế năm 2022, mã SHA 2011.
     </div>
@@ -417,12 +376,31 @@
 
   <!-- Enhanced Tooltip -->
   <div class="tooltip" id="tooltip"></div>
+  
+  <!-- Placeholder for stats if you add them later -->
+  <!-- 
+  <div class="stats-panel main-container">
+      <div class="stat-card">
+          <div class="stat-value" id="total-value">-</div>
+          <div class="stat-label">Tổng Chi Tiêu (nghìn tỷ VNĐ)</div>
+      </div>
+      <div class="stat-card">
+          <div class="stat-value" id="node-count">-</div>
+          <div class="stat-label">Số Lượng Nút</div>
+      </div>
+      <div class="stat-card">
+          <div class="stat-value" id="flow-count">-</div>
+          <div class="stat-label">Số Luồng Chính</div>
+      </div>
+  </div>
+  -->
 
   <script>
   (function() {
     // Create animated background
     function createParticles() {
       const container = document.getElementById('particles');
+      if (!container) return; // Ensure container exists
       for (let i = 0; i < 50; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
@@ -461,7 +439,6 @@ Các khoản chi khác từ tổ chức phi lợi nhuận|Chương trình sức 
 Tiền từ nước ngoài (viện trợ quốc tế)|Viện trợ ngân sách từ nước ngoài|2890171|1|2
 Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự nguyện|2890171|2|3`.trim();
 
-    // Parse pipe-delimited CSV data
     const parsedLinks = d3.dsvFormat("|").parse(sankeyDataCSV, d => ({
       source: d['Nguồn'],
       target: d['Đích'],
@@ -470,15 +447,12 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       step_to: +d['Bước Đích']
     }));
 
-    // ---- Keep full three‑step structure ----
     const filteredLinks = parsedLinks.filter(l => l.value > 0);
 
-    // Build full node list (steps 1–3)
     const nodeSet = new Set();
     filteredLinks.forEach(l => { nodeSet.add(l.source); nodeSet.add(l.target); });
     const nodes = Array.from(nodeSet).map(id => ({ id }));
 
-    // Determine hierarchical step for each node
     nodes.forEach(n => {
       let stepVal = Infinity;
       filteredLinks.forEach(l => {
@@ -488,7 +462,6 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       n.step = stepVal === Infinity ? 1 : stepVal;
     });
 
-    // Grand total of current health expenditure (flows are duplicated, so divide by 2)
     const grandTotal = filteredLinks.reduce((sum, link) => sum + link.value, 0) / 2;
 
     const extraInfo = {
@@ -508,20 +481,14 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       'Chương trình sức khỏe công cộng': 'Các dự án và chương trình y tế công do chính phủ hoặc tổ chức triển khai.',
     };
 
-    // ---- Color assignment based on origin ----
-
     const sourcePalette = ['#FF6B6B', '#FDB45C', '#3B82F6', '#1DD2AF', '#8E44AD', '#E67E22', '#00A8FF', '#9C88FF'];
     let srcIdx = 0;
-
-    // Give each origin (step‑1) node a unique color
     nodes.forEach(n => {
       if (n.step === 1) {
         n.color = sourcePalette[srcIdx % sourcePalette.length];
         srcIdx += 1;
       }
     });
-
-    // Propagate the dominant origin color downstream
     nodes.forEach(n => {
       if (n.step !== 1) {
         const incoming = filteredLinks.filter(l => l.target === n.id);
@@ -534,364 +501,316 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
     });
 
     const graph = { nodes, links: filteredLinks };
-
-    // SVG setup
     const svg = d3.select("#sankey");
-    function getChartSize() {
-      return {
-        width: Math.max(360, Math.min(window.innerWidth - 40, 1400)),
-        height: Math.max(320, Math.floor(window.innerHeight * 0.72))
-      };
-    }
-    window.addEventListener("resize", updateChart);
-
-    // Tooltip
     const tooltip = d3.select("#tooltip");
-
-    // Holds total value for each column (step) – updated every render
     let columnTotals = {};
 
-    // Sankey generator (base config, extent set per render)
+    const MOBILE_BREAKPOINT = 768; // Align with CSS media query
+
+    // Sankey generator configuration will be adjusted in updateChart
     const sankeyGen = d3.sankey()
       .nodeId(d => d.id)
       .nodeAlign(d3.sankeyJustify)
-      .nodeWidth(16)
-      .nodePadding(16)
-      // .extent will be set inside updateChart()
-      // Custom order: origins and destinations follow user‑specified lists, and step-2 grouped by dominant origin
+      // .nodeWidth, .nodePadding, .extent will be set inside updateChart()
       .nodeSort((a, b) => {
         const originOrder = [
-          'Tiền do hộ gia đình và người lao động đóng góp',
-          'Tiền từ ngân sách chính phủ',
-          'Tiền do doanh nghiệp đóng góp',
-          'Các nguồn khác',
-          'Tiền từ các tổ chức phi lợi nhuận',
-          'Tiền từ nước ngoài (viện trợ quốc tế)'
+          'Tiền do hộ gia đình và người lao động đóng góp', 'Tiền từ ngân sách chính phủ', 'Tiền do doanh nghiệp đóng góp',
+          'Các nguồn khác', 'Tiền từ các tổ chức phi lợi nhuận', 'Tiền từ nước ngoài (viện trợ quốc tế)'
         ];
-
         const destOrder = [
-          'Chi phí tự trả khi khám chữa bệnh (OOP)',
-          'Ngân sách và bảo hiểm y tế bắt buộc',
-          'Chương trình sức khỏe tự nguyện'
+          'Chi phí tự trả khi khám chữa bệnh (OOP)', 'Ngân sách và bảo hiểm y tế bắt buộc', 'Chương trình sức khỏe tự nguyện'
         ];
-
         const methodOrder = [
-          'Chi trả trực tiếp khi khám chữa bệnh',
-          'Tiền bảo hiểm do người lao động đóng',
-          'Tiền viện trợ trong nước',
-          'Tiền hỗ trợ từ chính phủ cho nhóm cụ thể (ví dụ: người nghèo, trẻ em, người già)',
-          'Tiền bảo hiểm do doanh nghiệp đóng',
-          'Các khoản chi khác từ doanh nghiệp',
-          'Các loại đóng góp bảo hiểm khác',
-          'Tiền trả trước tự nguyện (ví dụ: bảo hiểm sức khỏe tự nguyện)',
-          'Các khoản chi khác từ tổ chức phi lợi nhuận',
-          'Chương trình sức khỏe công cộng',
-          'Viện trợ ngân sách từ nước ngoài'
+          'Chi trả trực tiếp khi khám chữa bệnh', 'Tiền bảo hiểm do người lao động đóng', 'Tiền viện trợ trong nước',
+          'Tiền hỗ trợ từ chính phủ cho nhóm cụ thể (ví dụ: người nghèo, trẻ em, người già)', 'Tiền bảo hiểm do doanh nghiệp đóng',
+          'Các khoản chi khác từ doanh nghiệp', 'Các loại đóng góp bảo hiểm khác', 'Tiền trả trước tự nguyện (ví dụ: bảo hiểm sức khỏe tự nguyện)',
+          'Các khoản chi khác từ tổ chức phi lợi nhuận', 'Chương trình sức khỏe công cộng', 'Viện trợ ngân sách từ nước ngoài'
         ];
-        // Only compare nodes in the same column
         if (a.x0 !== b.x0) return 0;
-
-        // Helper: rank for step‑1 column
-        const rankOrigin = n => {
-          const idx = originOrder.indexOf(n.id);
-          return idx === -1 ? originOrder.length : idx;
-        };
-
-        // Helper: rank for step‑3 column
-        const rankDest = n => {
-          const idx = destOrder.indexOf(n.id);
-          return idx === -1 ? destOrder.length : idx;
-        };
-
-        // Helper: rank for step‑2 column based on dominant incoming origin
-        const rankMid = n => {
-          // Find incoming links and pick the first source that matches originOrder
-          const incoming = filteredLinks.filter(l => l.target === n.id);
-          if (incoming.length) {
-            const best = incoming.reduce((p, c) => (originOrder.indexOf(c.source) < originOrder.indexOf(p.source) ? c : p));
-            return rankOrigin({ id: best.source });
-          }
-          return originOrder.length;
-        };
-
+        const rankOrigin = n => { const idx = originOrder.indexOf(n.id); return idx === -1 ? originOrder.length : idx; };
+        const rankDest = n => { const idx = destOrder.indexOf(n.id); return idx === -1 ? destOrder.length : idx; };
         if (a.step === 1) return d3.ascending(rankOrigin(a), rankOrigin(b));
-        if (a.step === 3) return d3.ascending(rankDest(a),   rankDest(b));
+        if (a.step === 3) return d3.ascending(rankDest(a), rankDest(b));
         if (a.step === 2) {
-          const ra = methodOrder.indexOf(a.id);
-          const rb = methodOrder.indexOf(b.id);
-          return d3.ascending(ra === -1 ? methodOrder.length : ra,
-                              rb === -1 ? methodOrder.length : rb);
+          const ra = methodOrder.indexOf(a.id); const rb = methodOrder.indexOf(b.id);
+          return d3.ascending(ra === -1 ? methodOrder.length : ra, rb === -1 ? methodOrder.length : rb);
         }
         return 0;
       });
+      
+    function getChartSize() {
+      const chartWrapperEl = document.querySelector('.chart-wrapper');
+      const containerWidth = chartWrapperEl ? chartWrapperEl.clientWidth : window.innerWidth;
+      return { width: Math.max(window.innerWidth <= MOBILE_BREAKPOINT ? 300 : 360, containerWidth) };
+    }
+
+    window.addEventListener("resize", updateChart);
 
     function updateChart() {
-      // Calculate chart size on each render
-      const { width, height } = getChartSize();
+      // Compute dynamic height to fill below header and title
+      const headerEl = document.querySelector('.header');
+      const titleEl = document.querySelector('.main-container h2');
+      const footnoteEl = document.querySelector('.main-container > div[style*="font-size"]');
+      const headerH = headerEl ? headerEl.getBoundingClientRect().height : 0;
+      const titleH = titleEl ? titleEl.getBoundingClientRect().height : 0;
+      const footnoteH = footnoteEl ? footnoteEl.getBoundingClientRect().height : 0;
+      const totalMargin = 120; // for padding and spacing
+      const height = Math.max(200, window.innerHeight - headerH - titleH - footnoteH - totalMargin);
+      const { width } = getChartSize();
       svg.attr("width", width).attr("height", height);
 
-      // Centered horizontal padding for the Sankey diagram
-      const hPad = Math.max(80, width * 0.1);
-      sankeyGen.extent([[hPad, 40], [width - hPad, height - 40]]);
+      const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+
+      // Adjust Sankey parameters for mobile
+      const nodeWidth = isMobile ? 10 : 16;
+      const nodePadding = isMobile ? 8 : 16;
+      const sankeyHorizontalPadding = isMobile ? 5 : Math.max(40, width * 0.05); // Reduced hPad for mobile
+      const sankeyVerticalPadding = isMobile ? 10 : 40; // Reduced vertical padding for mobile
+
+      sankeyGen
+        .nodeWidth(nodeWidth)
+        .nodePadding(nodePadding)
+        .extent([[sankeyHorizontalPadding, sankeyVerticalPadding], [width - sankeyHorizontalPadding, height - sankeyVerticalPadding]]);
+      
       const { nodes: sankeyNodes, links: sankeyLinks } = sankeyGen(graph);
 
-      // Re‑calculate column totals for % display
       columnTotals = {1:0, 2:0, 3:0};
       sankeyNodes.forEach(n => { columnTotals[n.step] = (columnTotals[n.step] || 0) + n.value; });
 
-      // Clear existing elements
       svg.selectAll("*").remove();
 
-      // Add column headers
-      const columns = [
-        { step: 1, label: '1 - Nguồn tiền' },
-        { step: 2, label: '2 - Phương thức' },
-        { step: 3, label: '3 - Phân loại' }
-      ];
-
-      // Create node color mapping for links
       const nodeColorMap = new Map();
-      sankeyNodes.forEach(node => {
-        nodeColorMap.set(node.id, node.color);
-      });
+      sankeyNodes.forEach(node => nodeColorMap.set(node.id, node.color));
 
-      // Add gradient definitions for links
       const defs = svg.append("defs");
       sankeyLinks.forEach((link, i) => {
         const sourceColor = nodeColorMap.get(link.source.id);
         const targetColor = nodeColorMap.get(link.target.id);
-
         const gradient = defs.append("linearGradient")
           .attr("id", `gradient-${i}`)
           .attr("gradientUnits", "userSpaceOnUse")
           .attr("x1", link.source.x1).attr("y1", (link.source.y0 + link.source.y1) / 2)
           .attr("x2", link.target.x0).attr("y2", (link.target.y0 + link.target.y1) / 2);
-
-        gradient.append("stop")
-          .attr("offset", "0%")
-          .attr("stop-color", sourceColor)
-          .attr("stop-opacity", 0.8);
-
-        gradient.append("stop")
-          .attr("offset", "100%")
-          .attr("stop-color", targetColor)
-          .attr("stop-opacity", 0.8);
+        gradient.append("stop").attr("offset", "0%").attr("stop-color", sourceColor).attr("stop-opacity", 0.8);
+        gradient.append("stop").attr("offset", "100%").attr("stop-color", targetColor).attr("stop-opacity", 0.8);
       });
 
-      // Draw links
       const linkGroup = svg.append("g").attr("class", "links");
-
       linkGroup.selectAll("path")
-        .data(sankeyLinks)
-        .enter()
-        .append("path")
-          .attr("class", "link")
-          .attr("d", d3.sankeyLinkHorizontal())
-          .attr("stroke", (d, i) => `url(#gradient-${i})`)
-          .attr("stroke-width", d => Math.max(1, d.width))
-          .on("mouseover", function(event, d) {
-            // Highlight hovered link
-            d3.select(this).classed("highlighted", true);
+        .data(sankeyLinks).enter().append("path")
+        .attr("class", "link")
+        .attr("d", d3.sankeyLinkHorizontal())
+        .attr("stroke", (d, i) => `url(#gradient-${i})`)
+        .attr("stroke-width", d => Math.max(1, d.width))
+        .on("mouseover", function(event, d) {
+          d3.select(this).classed("highlighted", true);
+          linkGroup.selectAll("path").style("stroke-opacity", l => l === d ? 0.9 : 0.05);
+          nodeGroup.selectAll("rect").style("fill-opacity", n => (n.id === d.source.id || n.id === d.target.id) ? 1 : 0.2);
+          nodeGroup.selectAll("text").style("fill-opacity", n => (n.id === d.source.id || n.id === d.target.id) ? 1 : 0.2);
+          showLinkTooltip(event, d);
+        })
+        .on("mouseout", function() {
+          d3.select(this).classed("highlighted", false);
+          linkGroup.selectAll("path").style("stroke-opacity", 0.4);
+          nodeGroup.selectAll("rect").style("fill-opacity", n => n.step === 2 ? 0.25 : 1);
+          nodeGroup.selectAll("text").style("fill-opacity", 1);
+          hideTooltip();
+        });
 
-            // Fade other links
-            linkGroup.selectAll("path")
-              .style("stroke-opacity", l => l === d ? 0.9 : 0.05);
-
-            // Highlight source & target nodes (rect + text)
-            nodeGroup.selectAll("rect")
-              .style("fill-opacity", n => (n.id === d.source.id || n.id === d.target.id) ? 1 : 0.2);
-
-            nodeGroup.selectAll("text")
-              .style("fill-opacity", n => (n.id === d.source.id || n.id === d.target.id) ? 1 : 0.2);
-
-            showLinkTooltip(event, d);
-          })
-          .on("mouseout", function() {
-            d3.select(this).classed("highlighted", false);
-
-            // Restore link opacity
-            linkGroup.selectAll("path").style("stroke-opacity", 0.4);
-
-            // Restore nodes & labels
-            nodeGroup.selectAll("rect").style("fill-opacity", d => d.step === 2 ? 0.25 : 1);
-            nodeGroup.selectAll("text").style("fill-opacity", 1);
-
-            hideTooltip();
-          });
-
-      // Draw nodes
       const nodeGroup = svg.append("g").attr("class", "nodes");
-
       const nodeSelection = nodeGroup.selectAll("g")
-        .data(sankeyNodes)
-        .enter()
-        .append("g")
-          .attr("class", "node")
-          .attr("transform", d => `translate(${d.x0},${d.y0})`);
+        .data(sankeyNodes).enter().append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.x0},${d.y0})`);
 
       nodeSelection.append("rect")
         .attr("width", d => d.x1 - d.x0)
         .attr("height", d => d.y1 - d.y0)
-        .attr("rx", 6)
-        .attr("ry", 6)
+        .attr("rx", isMobile ? 4 : 6) // Smaller radius for mobile
+        .attr("ry", isMobile ? 4 : 6)
         .attr("fill", d => d.color)
         .attr("fill-opacity", d => d.step === 2 ? 0.25 : 1)
         .attr("stroke", 'var(--border)')
         .attr("stroke-width", 1)
         .on("mouseover", function(event, d) {
-          // Build a set of nodes connected within 2 hops (source ↔ mid ↔ dest)
           const relatedIds = new Set([d.id]);
-
-          // first hop
           const firstHop = [];
           sankeyLinks.forEach(l => {
             if (l.source.id === d.id) { relatedIds.add(l.target.id); firstHop.push(l.target.id); }
             if (l.target.id === d.id) { relatedIds.add(l.source.id); firstHop.push(l.source.id); }
           });
-
-          // second hop from firstHop nodes
           sankeyLinks.forEach(l => {
             if (firstHop.includes(l.source.id)) relatedIds.add(l.target.id);
             if (firstHop.includes(l.target.id)) relatedIds.add(l.source.id);
           });
-
-          // Highlight border of hovered node
           d3.select(this).attr("stroke-width", 2).attr("stroke", 'var(--accent-blue)');
+          linkGroup.selectAll("path").style("stroke-opacity", l => (relatedIds.has(l.source.id) && relatedIds.has(l.target.id)) ? 0.9 : 0.05);
+          nodeGroup.selectAll("rect").style("fill-opacity", n => relatedIds.has(n.id) ? 1 : (n.step === 2 ? 0.05 : 0.1));
+          nodeGroup.selectAll("text").style("fill-opacity", n => relatedIds.has(n.id) ? 1 : 0.1);
+          // --- Begin: step-2 label activation for mobile ---
+          const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+          d3.selectAll('text.step2').classed('active', false);
 
-          // Fade / highlight links:
-          // Keep bright any link whose BOTH ends belong to the relatedIds set
-          linkGroup.selectAll("path")
-            .style("stroke-opacity", l => (relatedIds.has(l.source.id) && relatedIds.has(l.target.id)) ? 0.9 : 0.05);
-
-          // Highlight related nodes (rect + text); fade others
-          nodeGroup.selectAll("rect")
-            .style("fill-opacity", n => relatedIds.has(n.id) ? 1 : (n.step === 2 ? 0.05 : 0.1));
-
-          nodeGroup.selectAll("text")
-            .style("fill-opacity", n => relatedIds.has(n.id) ? 1 : 0.1);
-
-          // Show tooltip
+          if (isMobile && (d.step === 1 || d.step === 3)) {
+            // Find related step-2 node ids
+            const relatedStep2Ids = new Set();
+            sankeyLinks.forEach(l => {
+              if (d.step === 1 && l.source.id === d.id && l.target.step === 2) relatedStep2Ids.add(l.target.id);
+              if (d.step === 3 && l.target.id === d.id && l.source.step === 2) relatedStep2Ids.add(l.source.id);
+            });
+            // Activate only those
+            d3.selectAll('g.node').each(function(n) {
+              if (n.step === 2 && relatedStep2Ids.has(n.id)) {
+                d3.select(this).selectAll('text.step2').classed('active', true);
+              }
+            });
+          }
+          // --- End: step-2 label activation for mobile ---
           showNodeTooltip(event, d);
         })
         .on("mouseout", function() {
-          // Restore border
           d3.select(this).attr("stroke-width", 1).attr("stroke", 'var(--border)');
-
-          // Restore link opacity
           linkGroup.selectAll("path").style("stroke-opacity", 0.4);
-
-          // Restore node & label opacity
           nodeGroup.selectAll("rect").style("fill-opacity", n => n.step === 2 ? 0.25 : 1);
           nodeGroup.selectAll("text").style("fill-opacity", 1);
-
+          // --- Begin: step-2 label deactivation for mobile ---
+          if (window.innerWidth <= MOBILE_BREAKPOINT) {
+            d3.selectAll('text.step2').classed('active', false);
+          }
+          // --- End: step-2 label deactivation for mobile ---
           hideTooltip();
         });
 
-      // Node labels - positioned outside nodes for better readability
       nodeSelection.each(function(d) {
+        // Skip drawing step-2 labels on mobile
+        if (window.innerWidth <= MOBILE_BREAKPOINT && d.step === 2) return;
         const node = d3.select(this);
-        const nodeWidth = d.x1 - d.x0;
+        const currentRectWidth = d.x1 - d.x0; // This is the actual nodeWidth from sankeyGen
         const nodeHeight = d.y1 - d.y0;
-        const LABEL_PAD = 30;
-        let textX, textAnchor, textAlign;
+        
+        const labelPadding = isMobile ? 8 : 15; // Reduced LABEL_PAD for mobile
+        
+        let textX, textAnchor;
 
-        if (d.step === 1) {
-          textX = LABEL_PAD;
+        if (d.step === 1) { // Labels to the right of Step 1 nodes
+          textX = currentRectWidth + labelPadding;
           textAnchor = "start";
-          textAlgin = "start";
-        } else if (d.step === 2) {
-          textX = nodeWidth / 2;
-          textAnchor = "middle";
-          textAlgin = "middle";
-        } else {
-          textX = nodeWidth - LABEL_PAD;
+        } else if (d.step === 3) { // Labels to the left of Step 3 nodes
+          textX = -labelPadding; // Relative to d.x0, so negative to be left
           textAnchor = "end";
-          textAlgin = "end"
+        } else { // Step 2, labels inside node
+          textX = currentRectWidth / 2;
+          textAnchor = "middle";
         }
-
-        // Split long text into multiple lines
+        
         const words = d.id.split(' ');
-        const maxWordsPerLine = 6;
+        // Cap all nodes at 4 words per line on mobile, 6 on desktop.
+        const maxWordsPerLine = isMobile ? 4 : 6;
         const lines = [];
-
         for (let i = 0; i < words.length; i += maxWordsPerLine) {
           lines.push(words.slice(i, i + maxWordsPerLine).join(' '));
         }
 
+        const baseFontSize = isMobile ? (d.step === 2 ? "8px" : "10px") : (d.step === 2 ? "9px" : "13px"); // Further refined mobile font sizes
+        const lineDy = isMobile ? (d.step === 2 ? 9 : 10) : 14; // Adjusted line height
+
         lines.forEach((line, lineIndex) => {
           node.append("text")
+            .classed("step2", d.step === 2)
             .attr("x", textX)
-            .attr("y", nodeHeight/2 + (lineIndex - lines.length/2 + 0.5) * 14)
+            .attr("y", nodeHeight/2 + (lineIndex - (lines.length -1)/2) * lineDy ) // Adjusted y for proper centering
+            .attr("dy", d.step === 2 ? "0.35em" : (isMobile ? "0.3em" : "0.35em")) // Vertical alignment adjusted for smaller fonts
             .attr("text-anchor", textAnchor)
-            .attr("text-align", textAlign)
-            .style("font-size", d.step === 2 ? "11px" : "15px")
+            .style("font-size", baseFontSize)
             .style("font-weight", d.step === 2 ? "400" : "600")
-            .style("fill", d.step === 2 ? "#C6C8C9" : "#F8FAFC")
-            .style("text-shadow", "1px 1px 2px rgba(0,0,0,0.8)")
+            .style("fill", d.step === 2 ? (isMobile ? "#B0B2B3" : "#C6C8C9") : "#F8FAFC")
+            .style("text-shadow", "1px 1px 1px rgba(0,0,0,0.7)") // Slightly reduced shadow for smaller fonts
             .text(line);
         });
       });
-
-      // Update stats
-      updateStats();
+      // updateStats(); // Call if you implement the stats panel
     }
 
     function formatCurrency(value) {
       return (value / 1e6).toFixed(1) + ' nghìn tỷ VNĐ';
     }
 
-    function getNodeType(nodeId) {
-      if (nodeId.includes('Chính phủ') || nodeId.includes('Chuyển giao CP')) return 'Khu vực công';
-      if (nodeId.includes('Hộ gia đình')) return 'Hộ gia đình';
-      if (nodeId.includes('Doanh nghiệp')) return 'Doanh nghiệp';
-      if (nodeId.includes('Chương trình')) return 'Chương trình tài chính';
-      return 'Khác';
-    }
-
     function showLinkTooltip(event, d) {
+      const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
       tooltip.html(`
-        <div style="font-size:16px;font-weight:600;color:#3B82F6;margin-bottom:8px;">
+        <div style="font-size: ${isMobile ? '13px' : '16px'};font-weight:600;color:#3B82F6;margin-bottom:6px;">
           ${d.source.id} → ${d.target.id}
         </div>
-        <div style="font-size:22px;font-weight:700;color:#10B981;">
+        <div style="font-size:${isMobile ? '18px' : '22px'};font-weight:700;color:#10B981;">
           ${formatCurrency(d.value)}
         </div>
-        <div style="font-size:13px;color:#F59E0B;margin-top:4px;">
+        <div style="font-size:${isMobile ? '11px' : '13px'};color:#F59E0B;margin-top:3px;">
           ${(d.value / grandTotal * 100).toFixed(1)}%
         </div>
       `);
+      // Position tooltip avoiding edge cut-off
+      const tooltipNode = tooltip.node();
+      const { width: tipW, height: tipH } = tooltipNode.getBoundingClientRect();
+      const pageX = event.pageX;
+      const pageY = event.pageY;
+      const margin = 10;
+      let leftPos = pageX;
+      let transformX = "-50%";
+      // Right overflow
+      if (pageX + tipW/2 > window.innerWidth - margin) {
+        leftPos = window.innerWidth - tipW - margin;
+        transformX = "0%";
+      }
+      // Left overflow
+      else if (pageX - tipW/2 < margin) {
+        leftPos = margin;
+        transformX = "0%";
+      }
       tooltip
-        .style("background", "#222C3A")
-        .style("border", "none")
-        .style("box-shadow", "0 2px 10px rgba(0,0,0,0.5)")
-        .style("backdrop-filter", "none")
-        .style("left", event.pageX + "px")
-        .style("top", event.pageY + "px")
+        .style("left", leftPos + "px")
+        .style("top", pageY + "px")
+        .style("transform", `translate(${transformX}, -100%)`)
         .classed("show", true);
     }
 
     function showNodeTooltip(event, d) {
+      const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
       const desc = extraInfo[d.id];
       const nodePercent = ((d.value / grandTotal) * 100).toFixed(1);
       tooltip.html(`
-        <div style="font-size:16px;font-weight:600;color:#3B82F6;margin-bottom:8px;">
+        <div style="font-size:${isMobile ? '13px' : '16px'};font-weight:600;color:#3B82F6;margin-bottom:6px;">
           ${d.id}
         </div>
-        <div style="font-size:22px;font-weight:700;color:#10B981;">
+        <div style="font-size:${isMobile ? '18px' : '22px'};font-weight:700;color:#10B981;">
           ${formatCurrency(d.value)}
         </div>
-        <div style="font-size:13px;color:#F59E0B;margin-top:4px;">
+        <div style="font-size:${isMobile ? '11px' : '13px'};color:#F59E0B;margin-top:3px;">
           ${nodePercent}%
         </div>
-        ${desc ? `<div style="font-size:12px;color:#CBD5E1;margin-top:10px;">${desc}</div>` : ''}
+        ${desc ? `<div style="font-size:${isMobile ? '10px' : '12px'};color:#CBD5E1;margin-top:8px;">${desc}</div>` : ''}
       `);
+      // Position tooltip avoiding edge cut-off
+      const tooltipNode = tooltip.node();
+      const { width: tipW, height: tipH } = tooltipNode.getBoundingClientRect();
+      const pageX = event.pageX;
+      const pageY = event.pageY;
+      const margin = 10;
+      let leftPos = pageX;
+      let transformX = "-50%";
+      // Right overflow
+      if (pageX + tipW/2 > window.innerWidth - margin) {
+        leftPos = window.innerWidth - tipW - margin;
+        transformX = "0%";
+      }
+      // Left overflow
+      else if (pageX - tipW/2 < margin) {
+        leftPos = margin;
+        transformX = "0%";
+      }
       tooltip
-        .style("background", "#222C3A")
-        .style("border", "none")
-        .style("box-shadow", "0 2px 10px rgba(0,0,0,0.5)")
-        .style("backdrop-filter", "none")
-        .style("left", event.pageX + "px")
-        .style("top", event.pageY + "px")
+        .style("left", leftPos + "px")
+        .style("top", pageY + "px")
+        .style("transform", `translate(${transformX}, -100%)`)
         .classed("show", true);
     }
 
@@ -899,16 +818,35 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       tooltip.classed("show", false);
     }
 
-    function updateStats() {
-      const sumOfLinks = grandTotal;
-      const totalBillion = (sumOfLinks / 1e6).toFixed(1);
-      document.getElementById('total-value').textContent = totalBillion;
-      document.getElementById('node-count').textContent = graph.nodes.length;
-      document.getElementById('flow-count').textContent = graph.links.length;
-    }
+    // function updateStats() { // Example, if you add the HTML for these IDs
+    //   const sumOfLinks = grandTotal;
+    //   const totalBillion = (sumOfLinks / 1e6).toFixed(1);
+    //   if(document.getElementById('total-value')) document.getElementById('total-value').textContent = totalBillion;
+    //   if(document.getElementById('node-count')) document.getElementById('node-count').textContent = graph.nodes.length;
+    //   if(document.getElementById('flow-count')) document.getElementById('flow-count').textContent = graph.links.length;
+    // }
 
-    // Initialize chart rendering
-    updateChart();
+    // CHE comparison tooltip
+    const cheElem = document.getElementById('che-amount');
+    const cheTooltipContent = `
+      <div style="font-size:14px; color:#F8FAFC;">
+        Tương đương <b>4.59%</b> GDP, và <b>24.53%</b> tổng chi ngân sách
+      </div>`;
+    cheElem.addEventListener('pointerenter', event => {
+      tooltip.html(cheTooltipContent);
+      const rect = cheElem.getBoundingClientRect();
+      const left = rect.left + rect.width/2;
+      const top = rect.bottom + 8;
+      tooltip
+        .style("left", left + "px")
+        .style("top", top + "px")
+        .classed("show", true);
+    });
+    cheElem.addEventListener('pointerleave', () => {
+      tooltip.classed("show", false);
+    });
+
+    updateChart(); // Initial chart rendering
   })();
   </script>
 </body>
