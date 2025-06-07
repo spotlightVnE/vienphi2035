@@ -397,6 +397,8 @@
 
   <script>
   (function() {
+    // Track toggled node for mobile tap-to-toggle
+    let activeToggledNodeId = null;
     // Create animated background
     function createParticles() {
       const container = document.getElementById('particles');
@@ -680,6 +682,71 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
           // --- End: step-2 label deactivation for mobile ---
           hideTooltip();
         });
+
+      // Pointer/tap handlers for node tap-to-toggle on mobile
+      nodeSelection
+        .on("pointerdown", (event, d) => {
+          const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+          if (isMobile && activeToggledNodeId === d.id) {
+            // second tap on same node: hide
+            activeToggledNodeId = null;
+            highlightNode(event, d, false);
+            hideTooltip();
+          } else {
+            // first tap or different node: show
+            activeToggledNodeId = d.id;
+            highlightNode(event, d, true);
+            showNodeTooltip(event, d);
+          }
+        })
+        .on("pointerleave", (event, d) => {
+          const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+          if (!isMobile) {
+            activeToggledNodeId = null;
+            highlightNode(event, d, false);
+            hideTooltip();
+          }
+        });
+
+      // Helper for node highlight logic (for tap-to-toggle and pointer)
+      function highlightNode(event, d, show) {
+        const relatedIds = new Set([d.id]);
+        const firstHop = [];
+        sankeyLinks.forEach(l => {
+          if (l.source.id === d.id) { relatedIds.add(l.target.id); firstHop.push(l.target.id); }
+          if (l.target.id === d.id) { relatedIds.add(l.source.id); firstHop.push(l.source.id); }
+        });
+        sankeyLinks.forEach(l => {
+          if (firstHop.includes(l.source.id)) relatedIds.add(l.target.id);
+          if (firstHop.includes(l.target.id)) relatedIds.add(l.source.id);
+        });
+        nodeGroup.selectAll("rect")
+          .style("fill-opacity", n => show ? (relatedIds.has(n.id) ? 1 : (n.step === 2 ? 0.05 : 0.1)) : (n.step === 2 ? 0.25 : 1));
+        nodeGroup.selectAll("text")
+          .style("fill-opacity", n => show ? (relatedIds.has(n.id) ? 1 : 0.1) : 1);
+        linkGroup.selectAll("path")
+          .style("stroke-opacity", l => show ? ((relatedIds.has(l.source.id) && relatedIds.has(l.target.id)) ? 0.9 : 0.05) : 0.4);
+        nodeGroup.selectAll("rect")
+          .attr("stroke-width", n => n.id === d.id && show ? 2 : 1)
+          .attr("stroke", n => n.id === d.id && show ? 'var(--accent-blue)' : 'var(--border)');
+        // step-2 label activation for mobile
+        const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+        d3.selectAll('text.step2').classed('active', false);
+        if (isMobile && (d.step === 1 || d.step === 3) && show) {
+          // Find related step-2 node ids
+          const relatedStep2Ids = new Set();
+          sankeyLinks.forEach(l => {
+            if (d.step === 1 && l.source.id === d.id && l.target.step === 2) relatedStep2Ids.add(l.target.id);
+            if (d.step === 3 && l.target.id === d.id && l.source.step === 2) relatedStep2Ids.add(l.source.id);
+          });
+          // Activate only those
+          d3.selectAll('g.node').each(function(n) {
+            if (n.step === 2 && relatedStep2Ids.has(n.id)) {
+              d3.select(this).selectAll('text.step2').classed('active', true);
+            }
+          });
+        }
+      }
 
       nodeSelection.each(function(d) {
         // Skip drawing step-2 labels on mobile
