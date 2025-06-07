@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Luồng Tài Chính Y Tế Việt Nam – Năm 2022 (SHA 2011)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- D3.js and D3-Sankey -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+
+  <style>
+    :root {
+      --primary-bg: #0F172A;
+      --secondary-bg: #1E293B;
+      --accent-blue: #3B82F6;
+      --accent-purple: #8B5CF6;
+      --accent-emerald: #10B981;
+      --accent-gold: #F59E0B;
+      --text-primary: #F8FAFC;
+      --text-secondary: #CBD5E1;
+      --text-muted: #64748B;
+      --border: #334155;
+      --card-bg: #1E293B;
+      --glass-bg: rgba(30, 41, 59, 0.8);
+      --tooltip-bg: rgba(15, 23, 42, 0.95);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, var(--primary-bg) 0%, #1E293B 100%);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background particles */
+    .bg-particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+      50% { transform: translateY(-20px) rotate(180deg); opacity: 0.6; }
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 40px 20px 30px 20px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+    }
+
+    .title {
+      font-family: "Playfair Display", serif;
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      background: linear-gradient(135deg, var(--text-primary), var(--accent-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin: 0;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.5;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      margin: 30px 0;
+      padding: 20px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: transform 0.2s ease;
+    }
+
+    .legend-item:hover {
+      transform: scale(1.05);
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .legend-color::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shine 2s infinite;
+    }
+
+    @keyframes shine {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    /* Main container */
+    .main-container {
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Sankey container */
+    .sankey-container {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sankey-container {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-wrapper {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      overflow: auto;
+      border-radius: 8px;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 72vh;
+      background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
+      min-width: 0;
+    }
+
+    /* Sankey elements */
+    .link {
+      fill: none;
+      stroke-opacity: 0.4;
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
+    }
+
+    .link:hover {
+      stroke-opacity: 0.8;
+      filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6));
+    }
+
+    .link.highlighted {
+      stroke-opacity: 0.9;
+      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { stroke-opacity: 0.9; }
+      50% { stroke-opacity: 0.6; }
+    }
+
+    .node rect {
+      stroke: var(--border);
+      stroke-width: 1px;
+      rx: 6;
+      ry: 6;
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    .node:hover rect {
+      stroke-width: 2px;
+      stroke: var(--accent-blue);
+      filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4));
+      transform: scale(1.02);
+    }
+
+    .node text {
+      font-size: 14px;
+      font-weight: 600;
+      pointer-events: none;
+      text-anchor: auto;
+      text-align: match-parent;
+      font-family: "Inter", sans-serif;
+      fill: var(--text-primary);
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    }
+
+    /* Enhanced Tooltip */
+    .tooltip {
+      position: absolute;
+      background: #23293a;
+      border: none;
+      border-radius: 0;
+      padding: 14px 18px;
+      font-size: 14px;
+      color: #fff;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -100%);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 1000;
+      min-width: 160px;
+      max-width: 350px;
+    }
+    .tooltip.show {
+      opacity: 1;
+      transform: translate(-50%, calc(-100% - 10px));
+    }
+
+    /* Help icon and popover */
+    .help {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+      margin-left: 4px;
+    }
+    .help-text {
+      visibility: hidden;
+      opacity: 0;
+      width: 220px;
+      background-color: var(--card-bg);
+      color: var(--text-primary);
+      text-align: left;
+      border-radius: 8px;
+      padding: 8px;
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1001;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      transition: opacity 0.2s ease, visibility 0.2s;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .help:hover .help-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Stats panel */
+    .stats-panel {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .stat-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        padding: 30px 15px;
+      }
+      
+      .legend {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .main-container {
+        padding: 15px;
+      }
+      
+      .sankey-container {
+        padding: 20px;
+      }
+
+      .tooltip {
+        max-width: 250px;
+        min-width: 170px;
+        padding: 16px 20px;
+      }
+
+      .tooltip-title {
+        font-size: 14px;
+      }
+
+      .tooltip-value {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Animated background -->
+  <div class="bg-particles" id="particles"></div>
+
+
+
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <h2 style="text-align:center; font-size: 1.5rem; font-weight: 600; margin: 40px auto 24px auto; color: #F8FAFC;">
+      Trong năm 2022, Việt Nam đã chi 438,2 nghìn tỷ cho y tế.
+    </h2>
+    <!-- Sankey Chart -->
+    <div class="sankey-container">
+      <div class="chart-wrapper">
+        <svg id="sankey"></svg>
+      </div>
+    </div>
+    <div style="margin: 40px auto 20px auto; max-width: 800px; color: #94a3b8; font-size: 13px; text-align: center; line-height: 1.5;">
+      <b>Phương pháp:</b> Dữ liệu dòng tài chính y tế dựa trên Hệ thống Tài khoản Y tế (SHA 2011), phân loại các nguồn chi, phương thức và điểm đến cuối cùng của chi tiêu.<br>
+      <b>Nguồn:</b> Bộ Y tế Việt Nam (2024), Báo cáo Tổng hợp Tài chính Y tế năm 2022, mã SHA 2011.
+    </div>
+  </div>
+
+  <!-- Enhanced Tooltip -->
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+  (function() {
+    // Create animated background
+    function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+        container.appendChild(particle);
+      }
+    }
+    createParticles();
+
+    // Data
+    const sankeyDataCSV = `
+Nguồn|Đích|Giá trị|Bước Nguồn|Bước Đích
+Tiền từ ngân sách chính phủ|Tiền viện trợ trong nước|78698596|1|2
+Tiền viện trợ trong nước|Ngân sách và bảo hiểm y tế bắt buộc|78698596|2|3
+Tiền từ ngân sách chính phủ|Tiền hỗ trợ từ chính phủ cho nhóm cụ thể (ví dụ: người nghèo, trẻ em, người già)|46374849|1|2
+Tiền hỗ trợ từ chính phủ cho nhóm cụ thể (ví dụ: người nghèo, trẻ em, người già)|Ngân sách và bảo hiểm y tế bắt buộc|46374849|2|3
+Tiền từ nước ngoài (viện trợ quốc tế)|Chương trình sức khỏe công cộng|4056060|1|2
+Chương trình sức khỏe công cộng|Ngân sách và bảo hiểm y tế bắt buộc|4056060|2|3
+Tiền do hộ gia đình và người lao động đóng góp|Tiền bảo hiểm do người lao động đóng|14911948|1|2
+Tiền bảo hiểm do người lao động đóng|Ngân sách và bảo hiểm y tế bắt buộc|14911948|2|3
+Tiền do doanh nghiệp đóng góp|Tiền bảo hiểm do doanh nghiệp đóng|29823898|1|2
+Tiền bảo hiểm do doanh nghiệp đóng|Ngân sách và bảo hiểm y tế bắt buộc|29823898|2|3
+Các nguồn khác|Các loại đóng góp bảo hiểm khác|21343672|1|2
+Các loại đóng góp bảo hiểm khác|Ngân sách và bảo hiểm y tế bắt buộc|21343672|2|3
+Các nguồn khác|Tiền trả trước tự nguyện (ví dụ: bảo hiểm sức khỏe tự nguyện)|24075000|1|2
+Tiền trả trước tự nguyện (ví dụ: bảo hiểm sức khỏe tự nguyện)|Chương trình sức khỏe tự nguyện|24075000|2|3
+Tiền do hộ gia đình và người lao động đóng góp|Chi trả trực tiếp khi khám chữa bệnh|173280507|1|2
+Chi trả trực tiếp khi khám chữa bệnh|Chi phí tự trả khi khám chữa bệnh (OOP)|173280507|2|3
+Tiền do doanh nghiệp đóng góp|Các khoản chi khác từ doanh nghiệp|31936196|1|2
+Các khoản chi khác từ doanh nghiệp|Chương trình sức khỏe tự nguyện|31936196|2|3
+Tiền từ các tổ chức phi lợi nhuận|Các khoản chi khác từ tổ chức phi lợi nhuận|10792656|1|2
+Các khoản chi khác từ tổ chức phi lợi nhuận|Chương trình sức khỏe tự nguyện|10792656|2|3
+Tiền từ nước ngoài (viện trợ quốc tế)|Viện trợ ngân sách từ nước ngoài|2890171|1|2
+Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự nguyện|2890171|2|3`.trim();
+
+    // Parse pipe-delimited CSV data
+    const parsedLinks = d3.dsvFormat("|").parse(sankeyDataCSV, d => ({
+      source: d['Nguồn'],
+      target: d['Đích'],
+      value: +d['Giá trị'],
+      step_from: +d['Bước Nguồn'],
+      step_to: +d['Bước Đích']
+    }));
+
+    // ---- Keep full three‑step structure ----
+    const filteredLinks = parsedLinks.filter(l => l.value > 0);
+
+    // Build full node list (steps 1–3)
+    const nodeSet = new Set();
+    filteredLinks.forEach(l => { nodeSet.add(l.source); nodeSet.add(l.target); });
+    const nodes = Array.from(nodeSet).map(id => ({ id }));
+
+    // Determine hierarchical step for each node
+    nodes.forEach(n => {
+      let stepVal = Infinity;
+      filteredLinks.forEach(l => {
+        if (l.source === n.id) stepVal = Math.min(stepVal, l.step_from);
+        if (l.target === n.id) stepVal = Math.min(stepVal, l.step_to);
+      });
+      n.step = stepVal === Infinity ? 1 : stepVal;
+    });
+
+    // Grand total of current health expenditure (flows are duplicated, so divide by 2)
+    const grandTotal = filteredLinks.reduce((sum, link) => sum + link.value, 0) / 2;
+
+    const extraInfo = {
+      'Tiền từ ngân sách chính phủ': 'Các nguồn chi từ ngân sách nhà nước trung ương và địa phương.',
+      'Tiền viện trợ trong nước': 'Nguồn tài trợ từ các chương trình, quỹ và tổ chức trong nước.',
+      'Tiền hỗ trợ từ chính phủ cho nhóm cụ thể (ví dụ: người nghèo, trẻ em, người già)': 'Ngân sách hỗ trợ đóng BHYT cho các nhóm ưu tiên theo quy định.',
+      'Tiền từ nước ngoài (viện trợ quốc tế)': 'Viện trợ ODA và hỗ trợ kỹ thuật từ các chính phủ và tổ chức quốc tế.',
+      'Tiền bảo hiểm do người lao động đóng': 'Phần bảo hiểm y tế bắt buộc do người lao động trích lương đóng.',
+      'Tiền bảo hiểm do doanh nghiệp đóng': 'Phần bảo hiểm y tế bắt buộc do doanh nghiệp đóng góp cho người lao động.',
+      'Các loại đóng góp bảo hiểm khác': 'Đóng góp BHYT tự nguyện và các hình thức bảo hiểm bổ sung khác.',
+      'Tiền trả trước tự nguyện (ví dụ: bảo hiểm sức khỏe tự nguyện)': 'Mua bảo hiểm y tế thương mại và các quỹ trả trước tư nhân.',
+      'Chi trả trực tiếp khi khám chữa bệnh': 'Chi phí túi tiền của hộ gia đình cho dịch vụ và thuốc tại cơ sở y tế (OOP).',
+      'Chi phí tự trả khi khám chữa bệnh (OOP)': 'Tổng chi trực tiếp mà hộ gia đình tự chịu khi khám chữa bệnh.',
+      'Các khoản chi khác từ doanh nghiệp': 'Hỗ trợ y tế, CSR và phúc lợi do doanh nghiệp tài trợ.',
+      'Các khoản chi khác từ tổ chức phi lợi nhuận': 'Nguồn tài trợ y tế từ các tổ chức phi chính phủ và quỹ từ thiện.',
+      'Viện trợ ngân sách từ nước ngoài': 'Viện trợ trực tiếp vào ngân sách nhà nước từ nguồn nước ngoài.',
+      'Chương trình sức khỏe công cộng': 'Các dự án và chương trình y tế công do chính phủ hoặc tổ chức triển khai.',
+    };
+
+    // ---- Color assignment based on origin ----
+
+    const sourcePalette = ['#FF6B6B', '#FDB45C', '#3B82F6', '#1DD2AF', '#8E44AD', '#E67E22', '#00A8FF', '#9C88FF'];
+    let srcIdx = 0;
+
+    // Give each origin (step‑1) node a unique color
+    nodes.forEach(n => {
+      if (n.step === 1) {
+        n.color = sourcePalette[srcIdx % sourcePalette.length];
+        srcIdx += 1;
+      }
+    });
+
+    // Propagate the dominant origin color downstream
+    nodes.forEach(n => {
+      if (n.step !== 1) {
+        const incoming = filteredLinks.filter(l => l.target === n.id);
+        if (incoming.length) {
+          const dominant = incoming.reduce((a, b) => (a.value > b.value ? a : b));
+          const originNode = nodes.find(x => x.id === dominant.source);
+          n.color = originNode?.color || '#444444';
+        }
+      }
+    });
+
+    const graph = { nodes, links: filteredLinks };
+
+    // SVG setup
+    const svg = d3.select("#sankey");
+    function getChartSize() {
+      return {
+        width: Math.max(360, Math.min(window.innerWidth - 40, 1400)),
+        height: Math.max(320, Math.floor(window.innerHeight * 0.72))
+      };
+    }
+    window.addEventListener("resize", updateChart);
+
+    // Tooltip
+    const tooltip = d3.select("#tooltip");
+
+    // Holds total value for each column (step) – updated every render
+    let columnTotals = {};
+
+    // Sankey generator (base config, extent set per render)
+    const sankeyGen = d3.sankey()
+      .nodeId(d => d.id)
+      .nodeAlign(d3.sankeyJustify)
+      .nodeWidth(16)
+      .nodePadding(16)
+      // .extent will be set inside updateChart()
+      // Custom order: origins and destinations follow user‑specified lists, and step-2 grouped by dominant origin
+      .nodeSort((a, b) => {
+        const originOrder = [
+          'Tiền do hộ gia đình và người lao động đóng góp',
+          'Tiền từ ngân sách chính phủ',
+          'Tiền do doanh nghiệp đóng góp',
+          'Các nguồn khác',
+          'Tiền từ các tổ chức phi lợi nhuận',
+          'Tiền từ nước ngoài (viện trợ quốc tế)'
+        ];
+
+        const destOrder = [
+          'Chi phí tự trả khi khám chữa bệnh (OOP)',
+          'Ngân sách và bảo hiểm y tế bắt buộc',
+          'Chương trình sức khỏe tự nguyện'
+        ];
+
+        const methodOrder = [
+          'Chi trả trực tiếp khi khám chữa bệnh',
+          'Tiền bảo hiểm do người lao động đóng',
+          'Tiền viện trợ trong nước',
+          'Tiền hỗ trợ từ chính phủ cho nhóm cụ thể (ví dụ: người nghèo, trẻ em, người già)',
+          'Tiền bảo hiểm do doanh nghiệp đóng',
+          'Các khoản chi khác từ doanh nghiệp',
+          'Các loại đóng góp bảo hiểm khác',
+          'Tiền trả trước tự nguyện (ví dụ: bảo hiểm sức khỏe tự nguyện)',
+          'Các khoản chi khác từ tổ chức phi lợi nhuận',
+          'Chương trình sức khỏe công cộng',
+          'Viện trợ ngân sách từ nước ngoài'
+        ];
+        // Only compare nodes in the same column
+        if (a.x0 !== b.x0) return 0;
+
+        // Helper: rank for step‑1 column
+        const rankOrigin = n => {
+          const idx = originOrder.indexOf(n.id);
+          return idx === -1 ? originOrder.length : idx;
+        };
+
+        // Helper: rank for step‑3 column
+        const rankDest = n => {
+          const idx = destOrder.indexOf(n.id);
+          return idx === -1 ? destOrder.length : idx;
+        };
+
+        // Helper: rank for step‑2 column based on dominant incoming origin
+        const rankMid = n => {
+          // Find incoming links and pick the first source that matches originOrder
+          const incoming = filteredLinks.filter(l => l.target === n.id);
+          if (incoming.length) {
+            const best = incoming.reduce((p, c) => (originOrder.indexOf(c.source) < originOrder.indexOf(p.source) ? c : p));
+            return rankOrigin({ id: best.source });
+          }
+          return originOrder.length;
+        };
+
+        if (a.step === 1) return d3.ascending(rankOrigin(a), rankOrigin(b));
+        if (a.step === 3) return d3.ascending(rankDest(a),   rankDest(b));
+        if (a.step === 2) {
+          const ra = methodOrder.indexOf(a.id);
+          const rb = methodOrder.indexOf(b.id);
+          return d3.ascending(ra === -1 ? methodOrder.length : ra,
+                              rb === -1 ? methodOrder.length : rb);
+        }
+        return 0;
+      });
+
+    function updateChart() {
+      // Calculate chart size on each render
+      const { width, height } = getChartSize();
+      svg.attr("width", width).attr("height", height);
+
+      // Centered horizontal padding for the Sankey diagram
+      const hPad = Math.max(80, width * 0.1);
+      sankeyGen.extent([[hPad, 40], [width - hPad, height - 40]]);
+      const { nodes: sankeyNodes, links: sankeyLinks } = sankeyGen(graph);
+
+      // Re‑calculate column totals for % display
+      columnTotals = {1:0, 2:0, 3:0};
+      sankeyNodes.forEach(n => { columnTotals[n.step] = (columnTotals[n.step] || 0) + n.value; });
+
+      // Clear existing elements
+      svg.selectAll("*").remove();
+
+      // Add column headers
+      const columns = [
+        { step: 1, label: '1 - Nguồn tiền' },
+        { step: 2, label: '2 - Phương thức' },
+        { step: 3, label: '3 - Phân loại' }
+      ];
+
+      // Create node color mapping for links
+      const nodeColorMap = new Map();
+      sankeyNodes.forEach(node => {
+        nodeColorMap.set(node.id, node.color);
+      });
+
+      // Add gradient definitions for links
+      const defs = svg.append("defs");
+      sankeyLinks.forEach((link, i) => {
+        const sourceColor = nodeColorMap.get(link.source.id);
+        const targetColor = nodeColorMap.get(link.target.id);
+
+        const gradient = defs.append("linearGradient")
+          .attr("id", `gradient-${i}`)
+          .attr("gradientUnits", "userSpaceOnUse")
+          .attr("x1", link.source.x1).attr("y1", (link.source.y0 + link.source.y1) / 2)
+          .attr("x2", link.target.x0).attr("y2", (link.target.y0 + link.target.y1) / 2);
+
+        gradient.append("stop")
+          .attr("offset", "0%")
+          .attr("stop-color", sourceColor)
+          .attr("stop-opacity", 0.8);
+
+        gradient.append("stop")
+          .attr("offset", "100%")
+          .attr("stop-color", targetColor)
+          .attr("stop-opacity", 0.8);
+      });
+
+      // Draw links
+      const linkGroup = svg.append("g").attr("class", "links");
+
+      linkGroup.selectAll("path")
+        .data(sankeyLinks)
+        .enter()
+        .append("path")
+          .attr("class", "link")
+          .attr("d", d3.sankeyLinkHorizontal())
+          .attr("stroke", (d, i) => `url(#gradient-${i})`)
+          .attr("stroke-width", d => Math.max(1, d.width))
+          .on("mouseover", function(event, d) {
+            // Highlight hovered link
+            d3.select(this).classed("highlighted", true);
+
+            // Fade other links
+            linkGroup.selectAll("path")
+              .style("stroke-opacity", l => l === d ? 0.9 : 0.05);
+
+            // Highlight source & target nodes (rect + text)
+            nodeGroup.selectAll("rect")
+              .style("fill-opacity", n => (n.id === d.source.id || n.id === d.target.id) ? 1 : 0.2);
+
+            nodeGroup.selectAll("text")
+              .style("fill-opacity", n => (n.id === d.source.id || n.id === d.target.id) ? 1 : 0.2);
+
+            showLinkTooltip(event, d);
+          })
+          .on("mouseout", function() {
+            d3.select(this).classed("highlighted", false);
+
+            // Restore link opacity
+            linkGroup.selectAll("path").style("stroke-opacity", 0.4);
+
+            // Restore nodes & labels
+            nodeGroup.selectAll("rect").style("fill-opacity", d => d.step === 2 ? 0.25 : 1);
+            nodeGroup.selectAll("text").style("fill-opacity", 1);
+
+            hideTooltip();
+          });
+
+      // Draw nodes
+      const nodeGroup = svg.append("g").attr("class", "nodes");
+
+      const nodeSelection = nodeGroup.selectAll("g")
+        .data(sankeyNodes)
+        .enter()
+        .append("g")
+          .attr("class", "node")
+          .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+      nodeSelection.append("rect")
+        .attr("width", d => d.x1 - d.x0)
+        .attr("height", d => d.y1 - d.y0)
+        .attr("rx", 6)
+        .attr("ry", 6)
+        .attr("fill", d => d.color)
+        .attr("fill-opacity", d => d.step === 2 ? 0.25 : 1)
+        .attr("stroke", 'var(--border)')
+        .attr("stroke-width", 1)
+        .on("mouseover", function(event, d) {
+          // Build a set of nodes connected within 2 hops (source ↔ mid ↔ dest)
+          const relatedIds = new Set([d.id]);
+
+          // first hop
+          const firstHop = [];
+          sankeyLinks.forEach(l => {
+            if (l.source.id === d.id) { relatedIds.add(l.target.id); firstHop.push(l.target.id); }
+            if (l.target.id === d.id) { relatedIds.add(l.source.id); firstHop.push(l.source.id); }
+          });
+
+          // second hop from firstHop nodes
+          sankeyLinks.forEach(l => {
+            if (firstHop.includes(l.source.id)) relatedIds.add(l.target.id);
+            if (firstHop.includes(l.target.id)) relatedIds.add(l.source.id);
+          });
+
+          // Highlight border of hovered node
+          d3.select(this).attr("stroke-width", 2).attr("stroke", 'var(--accent-blue)');
+
+          // Fade / highlight links:
+          // Keep bright any link whose BOTH ends belong to the relatedIds set
+          linkGroup.selectAll("path")
+            .style("stroke-opacity", l => (relatedIds.has(l.source.id) && relatedIds.has(l.target.id)) ? 0.9 : 0.05);
+
+          // Highlight related nodes (rect + text); fade others
+          nodeGroup.selectAll("rect")
+            .style("fill-opacity", n => relatedIds.has(n.id) ? 1 : (n.step === 2 ? 0.05 : 0.1));
+
+          nodeGroup.selectAll("text")
+            .style("fill-opacity", n => relatedIds.has(n.id) ? 1 : 0.1);
+
+          // Show tooltip
+          showNodeTooltip(event, d);
+        })
+        .on("mouseout", function() {
+          // Restore border
+          d3.select(this).attr("stroke-width", 1).attr("stroke", 'var(--border)');
+
+          // Restore link opacity
+          linkGroup.selectAll("path").style("stroke-opacity", 0.4);
+
+          // Restore node & label opacity
+          nodeGroup.selectAll("rect").style("fill-opacity", n => n.step === 2 ? 0.25 : 1);
+          nodeGroup.selectAll("text").style("fill-opacity", 1);
+
+          hideTooltip();
+        });
+
+      // Node labels - positioned outside nodes for better readability
+      nodeSelection.each(function(d) {
+        const node = d3.select(this);
+        const nodeWidth = d.x1 - d.x0;
+        const nodeHeight = d.y1 - d.y0;
+        const LABEL_PAD = 30;
+        let textX, textAnchor, textAlign;
+
+        if (d.step === 1) {
+          textX = LABEL_PAD;
+          textAnchor = "start";
+          textAlgin = "start";
+        } else if (d.step === 2) {
+          textX = nodeWidth / 2;
+          textAnchor = "middle";
+          textAlgin = "middle";
+        } else {
+          textX = nodeWidth - LABEL_PAD;
+          textAnchor = "end";
+          textAlgin = "end"
+        }
+
+        // Split long text into multiple lines
+        const words = d.id.split(' ');
+        const maxWordsPerLine = 6;
+        const lines = [];
+
+        for (let i = 0; i < words.length; i += maxWordsPerLine) {
+          lines.push(words.slice(i, i + maxWordsPerLine).join(' '));
+        }
+
+        lines.forEach((line, lineIndex) => {
+          node.append("text")
+            .attr("x", textX)
+            .attr("y", nodeHeight/2 + (lineIndex - lines.length/2 + 0.5) * 14)
+            .attr("text-anchor", textAnchor)
+            .attr("text-align", textAlign)
+            .style("font-size", d.step === 2 ? "11px" : "15px")
+            .style("font-weight", d.step === 2 ? "400" : "600")
+            .style("fill", d.step === 2 ? "#C6C8C9" : "#F8FAFC")
+            .style("text-shadow", "1px 1px 2px rgba(0,0,0,0.8)")
+            .text(line);
+        });
+      });
+
+      // Update stats
+      updateStats();
+    }
+
+    function formatCurrency(value) {
+      return (value / 1e6).toFixed(1) + ' nghìn tỷ VNĐ';
+    }
+
+    function getNodeType(nodeId) {
+      if (nodeId.includes('Chính phủ') || nodeId.includes('Chuyển giao CP')) return 'Khu vực công';
+      if (nodeId.includes('Hộ gia đình')) return 'Hộ gia đình';
+      if (nodeId.includes('Doanh nghiệp')) return 'Doanh nghiệp';
+      if (nodeId.includes('Chương trình')) return 'Chương trình tài chính';
+      return 'Khác';
+    }
+
+    function showLinkTooltip(event, d) {
+      tooltip.html(`
+        <div style="font-size:16px;font-weight:600;color:#3B82F6;margin-bottom:8px;">
+          ${d.source.id} → ${d.target.id}
+        </div>
+        <div style="font-size:22px;font-weight:700;color:#10B981;">
+          ${formatCurrency(d.value)}
+        </div>
+        <div style="font-size:13px;color:#F59E0B;margin-top:4px;">
+          ${(d.value / grandTotal * 100).toFixed(1)}%
+        </div>
+      `);
+      tooltip
+        .style("background", "#222C3A")
+        .style("border", "none")
+        .style("box-shadow", "0 2px 10px rgba(0,0,0,0.5)")
+        .style("backdrop-filter", "none")
+        .style("left", event.pageX + "px")
+        .style("top", event.pageY + "px")
+        .classed("show", true);
+    }
+
+    function showNodeTooltip(event, d) {
+      const desc = extraInfo[d.id];
+      const nodePercent = ((d.value / grandTotal) * 100).toFixed(1);
+      tooltip.html(`
+        <div style="font-size:16px;font-weight:600;color:#3B82F6;margin-bottom:8px;">
+          ${d.id}
+        </div>
+        <div style="font-size:22px;font-weight:700;color:#10B981;">
+          ${formatCurrency(d.value)}
+        </div>
+        <div style="font-size:13px;color:#F59E0B;margin-top:4px;">
+          ${nodePercent}%
+        </div>
+        ${desc ? `<div style="font-size:12px;color:#CBD5E1;margin-top:10px;">${desc}</div>` : ''}
+      `);
+      tooltip
+        .style("background", "#222C3A")
+        .style("border", "none")
+        .style("box-shadow", "0 2px 10px rgba(0,0,0,0.5)")
+        .style("backdrop-filter", "none")
+        .style("left", event.pageX + "px")
+        .style("top", event.pageY + "px")
+        .classed("show", true);
+    }
+
+    function hideTooltip() {
+      tooltip.classed("show", false);
+    }
+
+    function updateStats() {
+      const sumOfLinks = grandTotal;
+      const totalBillion = (sumOfLinks / 1e6).toFixed(1);
+      document.getElementById('total-value').textContent = totalBillion;
+      document.getElementById('node-count').textContent = graph.nodes.length;
+      document.getElementById('flow-count').textContent = graph.links.length;
+    }
+
+    // Initialize chart rendering
+    updateChart();
+  })();
+  </script>
+</body>
+</html>
