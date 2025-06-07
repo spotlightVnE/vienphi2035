@@ -556,7 +556,7 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       const headerH = headerEl ? headerEl.getBoundingClientRect().height : 0;
       const titleH = titleEl ? titleEl.getBoundingClientRect().height : 0;
       const footnoteH = footnoteEl ? footnoteEl.getBoundingClientRect().height : 0;
-      const totalMargin = 120; // for padding and spacing
+      const totalMargin = 80; // reduced to allow more chart height
       const height = Math.max(200, window.innerHeight - headerH - titleH - footnoteH - totalMargin);
       const { width } = getChartSize();
       svg.attr("width", width).attr("height", height);
@@ -565,7 +565,7 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
 
       // Adjust Sankey parameters for mobile
       const nodeWidth = isMobile ? 10 : 16;
-      const nodePadding = isMobile ? 8 : 16;
+      const nodePadding = isMobile ? 16 : 16;
       const sankeyHorizontalPadding = isMobile ? 5 : Math.max(40, width * 0.05); // Reduced hPad for mobile
       const sankeyVerticalPadding = isMobile ? 10 : 40; // Reduced vertical padding for mobile
 
@@ -932,6 +932,23 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
     });
     cheElem.addEventListener('pointerleave', () => {
       tooltip.classed("show", false);
+    });
+
+    // Hide tooltip on mobile when tapping outside a node
+    document.addEventListener('pointerdown', (e) => {
+      if (window.innerWidth <= MOBILE_BREAKPOINT && activeToggledNodeId) {
+        // if click is not on a node or tooltip
+        if (!e.target.closest('.node') && !e.target.closest('#tooltip') && e.target.id !== 'che-amount') {
+          activeToggledNodeId = null;
+          hideTooltip();
+          // Clear any highlights
+          nodeGroup && nodeGroup.selectAll('rect').style('fill-opacity', n => n.step===2?0.25:1)
+                                        .attr('stroke-width',1).attr('stroke','var(--border)');
+          linkGroup && linkGroup.selectAll('path').style('stroke-opacity',0.4);
+          // Remove active class from step2 labels
+          d3.selectAll('text.step2').classed('active', false);
+        }
+      }
     });
 
     updateChart(); // Initial chart rendering
