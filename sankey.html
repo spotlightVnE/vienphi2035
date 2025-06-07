@@ -754,8 +754,8 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       const pageX = event.pageX;
       const pageY = event.pageY;
       const margin = 10;
-      let leftPos = pageX;
-      let transformX = "-50%";
+      let leftPos = pageX, transformX = "-50%";
+      let transformY = "-100%", topPos = pageY;
       // Right overflow
       if (pageX + tipW/2 > window.innerWidth - margin) {
         leftPos = window.innerWidth - tipW - margin;
@@ -766,10 +766,15 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
         leftPos = margin;
         transformX = "0%";
       }
+      // Top overflow (tooltip would go above viewport)
+      if (pageY - tipH < margin) {
+        transformY = "0%";
+        topPos = pageY + margin;
+      }
       tooltip
         .style("left", leftPos + "px")
-        .style("top", pageY + "px")
-        .style("transform", `translate(${transformX}, -100%)`)
+        .style("top", topPos + "px")
+        .style("transform", `translate(${transformX}, ${transformY})`)
         .classed("show", true);
     }
 
@@ -795,8 +800,8 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       const pageX = event.pageX;
       const pageY = event.pageY;
       const margin = 10;
-      let leftPos = pageX;
-      let transformX = "-50%";
+      let leftPos = pageX, transformX = "-50%";
+      let transformY = "-100%", topPos = pageY;
       // Right overflow
       if (pageX + tipW/2 > window.innerWidth - margin) {
         leftPos = window.innerWidth - tipW - margin;
@@ -807,10 +812,15 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
         leftPos = margin;
         transformX = "0%";
       }
+      // Top overflow (tooltip would go above viewport)
+      if (pageY - tipH < margin) {
+        transformY = "0%";
+        topPos = pageY + margin;
+      }
       tooltip
         .style("left", leftPos + "px")
-        .style("top", pageY + "px")
-        .style("transform", `translate(${transformX}, -100%)`)
+        .style("top", topPos + "px")
+        .style("transform", `translate(${transformX}, ${transformY})`)
         .classed("show", true);
     }
 
@@ -834,12 +844,23 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       </div>`;
     cheElem.addEventListener('pointerenter', event => {
       tooltip.html(cheTooltipContent);
+      const tooltipNode2 = tooltip.node();
+      const { width: tipW2, height: tipH2 } = tooltipNode2.getBoundingClientRect();
       const rect = cheElem.getBoundingClientRect();
-      const left = rect.left + rect.width/2;
-      const top = rect.bottom + 8;
+      const margin = 10;
+      let left2 = rect.left + rect.width/2, top2 = rect.bottom + 8, transformY2 = "-100%";
+      // If too close to top
+      if (top2 - tipH2 < margin) {
+        transformY2 = "0%";
+        top2 = rect.bottom + margin;
+      }
+      // Horizontal overflow
+      if (left2 + tipW2/2 > window.innerWidth - margin) left2 = window.innerWidth - tipW2 - margin;
+      else if (left2 - tipW2/2 < margin) left2 = margin;
       tooltip
-        .style("left", left + "px")
-        .style("top", top + "px")
+        .style("left", left2 + "px")
+        .style("top", top2 + "px")
+        .style("transform", `translate(-50%, ${transformY2})`)
         .classed("show", true);
     });
     cheElem.addEventListener('pointerleave', () => {
