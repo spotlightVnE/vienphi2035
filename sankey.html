@@ -505,6 +505,9 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
     const graph = { nodes, links: filteredLinks };
     const svg = d3.select("#sankey");
     const tooltip = d3.select("#tooltip");
+    // Globals so we can clear highlights from the outside‑tap handler
+    let gNodeGroup = null;   // holds latest nodeGroup selection
+    let gLinkGroup = null;   // holds latest linkGroup selection
     let columnTotals = {};
 
     const MOBILE_BREAKPOINT = 768; // Align with CSS media query
@@ -598,6 +601,8 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       });
 
       const linkGroup = svg.append("g").attr("class", "links");
+      // Expose to global handlers
+      gLinkGroup = linkGroup;
       linkGroup.selectAll("path")
         .data(sankeyLinks).enter().append("path")
         .attr("class", "link")
@@ -620,6 +625,8 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
         });
 
       const nodeGroup = svg.append("g").attr("class", "nodes");
+      // Expose to global handlers
+      gNodeGroup = nodeGroup;
       const nodeSelection = nodeGroup.selectAll("g")
         .data(sankeyNodes).enter().append("g")
         .attr("class", "node")
@@ -822,7 +829,7 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       const pageY = event.pageY;
       const margin = 10;
       let leftPos = pageX, transformX = "-50%";
-      let transformY = "-100%", topPos = pageY;
+      let topPos = pageY;
       // Right overflow
       if (pageX + tipW/2 > window.innerWidth - margin) {
         leftPos = window.innerWidth - tipW - margin;
@@ -835,13 +842,12 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       }
       // Top overflow (tooltip would go above viewport)
       if (pageY - tipH < margin) {
-        transformY = "0%";
         topPos = pageY + margin;
       }
       tooltip
         .style("left", leftPos + "px")
         .style("top", topPos + "px")
-        .style("transform", `translate(${transformX}, ${transformY})`)
+        .style("transform", `translateX(${transformX})`)
         .classed("show", true);
     }
 
@@ -868,7 +874,7 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       const pageY = event.pageY;
       const margin = 10;
       let leftPos = pageX, transformX = "-50%";
-      let transformY = "-100%", topPos = pageY;
+      let topPos = pageY;
       // Right overflow
       if (pageX + tipW/2 > window.innerWidth - margin) {
         leftPos = window.innerWidth - tipW - margin;
@@ -881,13 +887,12 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       }
       // Top overflow (tooltip would go above viewport)
       if (pageY - tipH < margin) {
-        transformY = "0%";
         topPos = pageY + margin;
       }
       tooltip
         .style("left", leftPos + "px")
         .style("top", topPos + "px")
-        .style("transform", `translate(${transformX}, ${transformY})`)
+        .style("transform", `translateX(${transformX})`)
         .classed("show", true);
     }
 
@@ -944,9 +949,10 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
           activeToggledNodeId = null;
           hideTooltip();
           // Clear any highlights
-          nodeGroup && nodeGroup.selectAll('rect').style('fill-opacity', n => n.step===2?0.25:1)
-                                        .attr('stroke-width',1).attr('stroke','var(--border)');
-          linkGroup && linkGroup.selectAll('path').style('stroke-opacity',0.4);
+          gNodeGroup && gNodeGroup.selectAll('rect')
+            .style('fill-opacity', n => n.step===2 ? 0.25 : 1)
+            .attr('stroke-width',1).attr('stroke','var(--border)');
+          gLinkGroup && gLinkGroup.selectAll('path').style('stroke-opacity',0.4);
           // Remove active class from step2 labels
           d3.selectAll('text.step2').classed('active', false);
         }
