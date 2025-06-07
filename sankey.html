@@ -934,11 +934,13 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       tooltip.classed("show", false);
     });
 
-    // Hide tooltip on mobile when tapping outside a node
+    // Hide tooltip on mobile when tapping outside a node or tooltip
     document.addEventListener('pointerdown', (e) => {
       if (window.innerWidth <= MOBILE_BREAKPOINT && activeToggledNodeId) {
-        // if click is not on a node or tooltip
-        if (!e.target.closest('.node') && !e.target.closest('#tooltip') && e.target.id !== 'che-amount') {
+        const clickedInsideNode = e.target.closest('g.node');
+        const clickedInsideTooltip = e.target.closest('#tooltip');
+        const clickedOnChe = e.target.id === 'che-amount';
+        if (!clickedInsideNode && !clickedInsideTooltip && !clickedOnChe) {
           activeToggledNodeId = null;
           hideTooltip();
           // Clear any highlights
