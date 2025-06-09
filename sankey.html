@@ -147,59 +147,67 @@
     /* Sankey elements */
     .link {
       fill: none;
-      stroke-opacity: 0.4;
-      transition: all 0.3s ease;
+      /* stroke-opacity set in JS */
+      transition: stroke-opacity 0.3s ease;
       filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
     }
 
-    .link:hover {
-      stroke-opacity: 0.8;
+    .link:hover:not(.no-hover-effect) { 
+      /* stroke-opacity managed by JS hover logic for links now */
       filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6));
     }
 
-    .link.highlighted {
-      stroke-opacity: 0.9;
+    .link.highlighted { /* Used for active path highlighting */
+      /* stroke-opacity set in JS */
       filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
-      animation: pulse 2s infinite;
+      /* animation: pulse 2s infinite; -- Pulse can be distracting with complex rules */
     }
 
-    @keyframes pulse {
-      0%, 100% { stroke-opacity: 0.9; }
+    /* @keyframes pulse {
+      0%, 100% { stroke-opacity: 0.9; } 
       50% { stroke-opacity: 0.6; }
-    }
+    } */
 
     .node rect {
       stroke: var(--border);
       stroke-width: 1px;
       rx: 6;
       ry: 6;
-      transition: all 0.3s ease;
+      transition: fill-opacity 0.3s ease, stroke-opacity 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     }
 
-    .node:hover rect {
-      stroke-width: 2px;
-      stroke: var(--accent-blue);
-      filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4));
-      transform: scale(1.02); /* Keep or remove based on preference */
+    .node rect:not(.no-hover-effect):hover { 
+        stroke-width: 2px;
+        stroke: var(--accent-blue);
+        filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4));
     }
 
+
     .node text {
-      /* Font size set dynamically in JS */
-      font-weight: 600; /* Base weight, can be adjusted in JS */
+      font-weight: 600; 
       pointer-events: none;
-      text-anchor: auto; /* Set dynamically in JS */
+      text-anchor: auto; 
       font-family: "Inter", sans-serif;
-      fill: var(--text-primary); /* Base color, can be adjusted in JS */
+      fill: var(--text-primary); 
       text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+      transition: opacity 0.2s ease, fill-opacity 0.2s ease;
     }
+    
+    text.step2-label { 
+      opacity: 0; /* Hidden by default */
+    }
+    text.step2-label.active {
+      opacity: 1; /* Shown when active */
+    }
+
 
     /* Enhanced Tooltip */
     .tooltip {
       position: absolute;
       background: #23293a;
       border: none;
-      border-radius: 0; /* Changed from 8px */
+      border-radius: 0; 
       padding: 14px 18px;
       font-size: 14px;
       color: #fff;
@@ -291,36 +299,43 @@
     }
     @media (max-width: 768px) {
       .header {
-        padding: 20px 10px 20px 10px; /* Reduced padding */
+        padding: 20px 10px 20px 10px; 
       }
       .title {
-        font-size: clamp(20px, 5vw, 28px); /* Slightly smaller title */
+        font-size: clamp(20px, 5vw, 28px); 
       }
       .subtitle {
-        font-size: 14px; /* Slightly smaller subtitle */
+        font-size: 14px; 
       }
-      
-      
+
+      .main-container h2 {
+        font-size: 1rem;          
+        line-height: 1.3;
+        word-wrap: break-word;
+        white-space: normal;
+        padding: 0 8px;           
+      }
+
       .main-container {
-        padding: 10px; /* Significantly reduced padding */
+        padding: 10px; 
       }
-      
+
       .sankey-container {
-        padding: 5px; /* Significantly reduced padding */
-        border-radius: 8px; /* Slightly smaller border radius */
+        padding: 5px; 
+        border-radius: 8px; 
       }
 
       .chart-wrapper {
-        border-radius: 6px; /* Match inner container */
+        border-radius: 6px; 
       }
 
       .tooltip {
-        max-width: 200px; /* Adjust tooltip size for mobile */
+        max-width: 200px; 
         min-width: 140px;
-        padding: 10px 12px; /* Smaller tooltip padding */
+        padding: 10px 12px; 
         font-size: 12px;
       }
-      .tooltip-title { /* Assuming you might add classes like this in JS for tooltip content */
+      .tooltip-title { 
         font-size: 13px;
       }
       .tooltip-value {
@@ -339,15 +354,6 @@
       }
       .stat-label {
         font-size: 12px;
-      }
-
-      /* Hide step-2 labels on mobile */
-      text.step2 {
-        opacity: 0;
-        transition: opacity 0.2s ease;
-      }
-      text.step2.active {
-        opacity: 1;
       }
     }
   </style>
@@ -377,32 +383,18 @@
   <!-- Enhanced Tooltip -->
   <div class="tooltip" id="tooltip"></div>
   
-  <!-- Placeholder for stats if you add them later -->
-  <!-- 
-  <div class="stats-panel main-container">
-      <div class="stat-card">
-          <div class="stat-value" id="total-value">-</div>
-          <div class="stat-label">Tổng Chi Tiêu (nghìn tỷ VNĐ)</div>
-      </div>
-      <div class="stat-card">
-          <div class="stat-value" id="node-count">-</div>
-          <div class="stat-label">Số Lượng Nút</div>
-      </div>
-      <div class="stat-card">
-          <div class="stat-value" id="flow-count">-</div>
-          <div class="stat-label">Số Luồng Chính</div>
-      </div>
-  </div>
-  -->
-
   <script>
   (function() {
-    // Track toggled node for mobile tap-to-toggle
     let activeToggledNodeId = null;
-    // Create animated background
+    let gNodeGroup = null;
+    let gLinkGroupSelection = null; 
+    let currentSankeyLayoutNodes = [];
+    let currentSankeyLayoutLinks = [];
+
+
     function createParticles() {
       const container = document.getElementById('particles');
-      if (!container) return; // Ensure container exists
+      if (!container) return; 
       for (let i = 0; i < 50; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
@@ -415,7 +407,6 @@
     }
     createParticles();
 
-    // Data
     const sankeyDataCSV = `
 Nguồn|Đích|Giá trị|Bước Nguồn|Bước Đích
 Tiền từ ngân sách chính phủ|Tiền viện trợ trong nước|78698596|1|2
@@ -441,32 +432,84 @@ Các khoản chi khác từ tổ chức phi lợi nhuận|Chương trình sức 
 Tiền từ nước ngoài (viện trợ quốc tế)|Viện trợ ngân sách từ nước ngoài|2890171|1|2
 Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự nguyện|2890171|2|3`.trim();
 
-    const parsedLinks = d3.dsvFormat("|").parse(sankeyDataCSV, d => ({
+    const parsedOriginalLinks = d3.dsvFormat("|").parse(sankeyDataCSV, d => ({
       source: d['Nguồn'],
       target: d['Đích'],
       value: +d['Giá trị'],
-      step_from: +d['Bước Nguồn'],
-      step_to: +d['Bước Đích']
+      original_step_from: +d['Bước Nguồn'],
+      original_step_to: +d['Bước Đích']
     }));
 
-    const filteredLinks = parsedLinks.filter(l => l.value > 0);
+    let filteredLinks = parsedOriginalLinks.filter(l => l.value > 0);
+    const originalNodeSet = new Set();
+    filteredLinks.forEach(l => { originalNodeSet.add(l.source); originalNodeSet.add(l.target); });
+    let originalNodes = Array.from(originalNodeSet).map(id => ({ id }));
 
-    const nodeSet = new Set();
-    filteredLinks.forEach(l => { nodeSet.add(l.source); nodeSet.add(l.target); });
-    const nodes = Array.from(nodeSet).map(id => ({ id }));
-
-    nodes.forEach(n => {
+    originalNodes.forEach(n => {
       let stepVal = Infinity;
       filteredLinks.forEach(l => {
-        if (l.source === n.id) stepVal = Math.min(stepVal, l.step_from);
-        if (l.target === n.id) stepVal = Math.min(stepVal, l.step_to);
+        if (l.source === n.id) stepVal = Math.min(stepVal, l.original_step_from);
+        if (l.target === n.id) stepVal = Math.min(stepVal, l.original_step_to);
       });
-      n.step = stepVal === Infinity ? 1 : stepVal;
+      n.original_step = stepVal === Infinity ? 1 : stepVal;
+    });
+    
+    const rootNodeName = "Tổng chi phí y tế Việt Nam";
+    const newRootLinks = [];
+    const currentStep1Nodes = originalNodes.filter(n => 
+        filteredLinks.some(l => l.source === n.id && l.original_step_from === 1)
+    );
+
+    currentStep1Nodes.forEach(s1Node => {
+      let totalOutgoingValue = 0;
+      filteredLinks.forEach(l => {
+        if (l.source === s1Node.id) totalOutgoingValue += l.value;
+      });
+      if (totalOutgoingValue > 0) {
+        newRootLinks.push({ source: rootNodeName, target: s1Node.id, value: totalOutgoingValue });
+      }
     });
 
-    const grandTotal = filteredLinks.reduce((sum, link) => sum + link.value, 0) / 2;
+    filteredLinks = [...newRootLinks, ...filteredLinks];
+    
+    const finalNodeSet = new Set([rootNodeName]);
+    filteredLinks.forEach(l => { finalNodeSet.add(l.source); finalNodeSet.add(l.target); });
+    let nodes = Array.from(finalNodeSet).map(id => ({ id }));
+    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+    nodes.forEach(n => delete n.step); 
+    const queue = [{ nodeId: rootNodeName, currentStep: 0 }];
+    nodeMap.get(rootNodeName).step = 0;
+    const visitedForStepAssignment = new Set([rootNodeName]);
+
+    while (queue.length > 0) {
+      const { nodeId, currentStep } = queue.shift();
+      filteredLinks.forEach(link => {
+        if (link.source === nodeId) {
+          const targetNode = nodeMap.get(link.target);
+          if (targetNode) {
+            if (targetNode.step === undefined || targetNode.step > currentStep + 1) {
+                 targetNode.step = currentStep + 1;
+            }
+            if (!visitedForStepAssignment.has(targetNode.id)) {
+              visitedForStepAssignment.add(targetNode.id);
+              queue.push({ nodeId: targetNode.id, currentStep: targetNode.step });
+            }
+          }
+        }
+      });
+    }
+    nodes.forEach(n => {
+        if (n.step === undefined) {
+            console.warn("Node without step:", n.id);
+            n.step = 1; 
+        }
+    });
+
+    const grandTotal = newRootLinks.reduce((sum, link) => sum + link.value, 0);
 
     const extraInfo = {
+      [rootNodeName]: 'Tổng chi phí y tế của Việt Nam trong năm 2022.',
       'Tiền từ ngân sách chính phủ': 'Các nguồn chi từ ngân sách nhà nước trung ương và địa phương.',
       'Tiền viện trợ trong nước': 'Nguồn tài trợ từ các chương trình, quỹ và tổ chức trong nước.',
       'Tiền hỗ trợ từ chính phủ cho nhóm cụ thể (ví dụ: người nghèo, trẻ em, người già)': 'Ngân sách hỗ trợ đóng BHYT cho các nhóm ưu tiên theo quy định.',
@@ -483,64 +526,69 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       'Chương trình sức khỏe công cộng': 'Các dự án và chương trình y tế công do chính phủ hoặc tổ chức triển khai.',
     };
 
-    const sourcePalette = ['#FF6B6B', '#FDB45C', '#3B82F6', '#1DD2AF', '#8E44AD', '#E67E22', '#00A8FF', '#9C88FF'];
+    const sourcePalette = ['#A78BFA', '#FF6B6B', '#FDB45C', '#3B82F6', '#1DD2AF', '#8E44AD', '#E67E22', '#00A8FF', '#9C88FF']; 
     let srcIdx = 0;
     nodes.forEach(n => {
-      if (n.step === 1) {
+      if (n.step === 0 || n.step === 1) { 
         n.color = sourcePalette[srcIdx % sourcePalette.length];
-        srcIdx += 1;
+        srcIdx++;
       }
     });
     nodes.forEach(n => {
-      if (n.step !== 1) {
+      if (n.step > 1) { 
         const incoming = filteredLinks.filter(l => l.target === n.id);
         if (incoming.length) {
           const dominant = incoming.reduce((a, b) => (a.value > b.value ? a : b));
           const originNode = nodes.find(x => x.id === dominant.source);
           n.color = originNode?.color || '#444444';
+        } else if (!n.color) { 
+            n.color = '#64748B'; 
         }
       }
     });
+    const rootNodeInstance = nodeMap.get(rootNodeName);
+    if (rootNodeInstance && !rootNodeInstance.color) {
+        rootNodeInstance.color = sourcePalette[0];
+    }
 
     const graph = { nodes, links: filteredLinks };
     const svg = d3.select("#sankey");
     const tooltip = d3.select("#tooltip");
-    // Globals so we can clear highlights from the outside‑tap handler
-    let gNodeGroup = null;   // holds latest nodeGroup selection
-    let gLinkGroup = null;   // holds latest linkGroup selection
-    let columnTotals = {};
+    
+    const MOBILE_BREAKPOINT = 400;
+    const DEFAULT_STEP2_OPACITY = 0.25; 
+    const DEFAULT_LINK_OPACITY = 0.4;
+    const DIMMED_OPACITY_LOW = 0.05; // For elements not part of the active path at all
+    const DIMMED_OPACITY_RECT_STEP2_OFF_PATH = DEFAULT_STEP2_OPACITY * 0.2; // Dimmer for step 2 rects off path
+    const ACTIVE_LINK_OPACITY = 0.9;
 
-    const MOBILE_BREAKPOINT = 768; // Align with CSS media query
 
-    // Sankey generator configuration will be adjusted in updateChart
     const sankeyGen = d3.sankey()
       .nodeId(d => d.id)
       .nodeAlign(d3.sankeyJustify)
-      // .nodeWidth, .nodePadding, .extent will be set inside updateChart()
       .nodeSort((a, b) => {
-        const originOrder = [
+        const originOrder = [ 
           'Tiền do hộ gia đình và người lao động đóng góp', 'Tiền từ ngân sách chính phủ', 'Tiền do doanh nghiệp đóng góp',
           'Các nguồn khác', 'Tiền từ các tổ chức phi lợi nhuận', 'Tiền từ nước ngoài (viện trợ quốc tế)'
         ];
-        const destOrder = [
+        const destOrder = [ 
           'Chi phí tự trả khi khám chữa bệnh (OOP)', 'Ngân sách và bảo hiểm y tế bắt buộc', 'Chương trình sức khỏe tự nguyện'
         ];
-        const methodOrder = [
+        const methodOrder = [ 
           'Chi trả trực tiếp khi khám chữa bệnh', 'Tiền bảo hiểm do người lao động đóng', 'Tiền viện trợ trong nước',
           'Tiền hỗ trợ từ chính phủ cho nhóm cụ thể (ví dụ: người nghèo, trẻ em, người già)', 'Tiền bảo hiểm do doanh nghiệp đóng',
           'Các khoản chi khác từ doanh nghiệp', 'Các loại đóng góp bảo hiểm khác', 'Tiền trả trước tự nguyện (ví dụ: bảo hiểm sức khỏe tự nguyện)',
           'Các khoản chi khác từ tổ chức phi lợi nhuận', 'Chương trình sức khỏe công cộng', 'Viện trợ ngân sách từ nước ngoài'
         ];
-        if (a.x0 !== b.x0) return 0;
-        const rankOrigin = n => { const idx = originOrder.indexOf(n.id); return idx === -1 ? originOrder.length : idx; };
-        const rankDest = n => { const idx = destOrder.indexOf(n.id); return idx === -1 ? destOrder.length : idx; };
-        if (a.step === 1) return d3.ascending(rankOrigin(a), rankOrigin(b));
-        if (a.step === 3) return d3.ascending(rankDest(a), rankDest(b));
-        if (a.step === 2) {
-          const ra = methodOrder.indexOf(a.id); const rb = methodOrder.indexOf(b.id);
-          return d3.ascending(ra === -1 ? methodOrder.length : ra, rb === -1 ? methodOrder.length : rb);
-        }
-        return 0;
+
+        if (a.x0 !== b.x0) return 0; 
+        if (a.step === 0) return 0; 
+        const rank = (node, orderArray) => { const idx = orderArray.indexOf(node.id); return idx === -1 ? orderArray.length : idx; };
+
+        if (a.step === 1) return d3.ascending(rank(a, originOrder), rank(b, originOrder));
+        if (a.step === 3) return d3.ascending(rank(a, destOrder), rank(b, destOrder));
+        if (a.step === 2) return d3.ascending(rank(a, methodOrder), rank(b, methodOrder));
+        return 0; 
       });
       
     function getChartSize() {
@@ -552,45 +600,43 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
     window.addEventListener("resize", updateChart);
 
     function updateChart() {
-      // Compute dynamic height to fill below header and title
       const headerEl = document.querySelector('.header');
       const titleEl = document.querySelector('.main-container h2');
       const footnoteEl = document.querySelector('.main-container > div[style*="font-size"]');
       const headerH = headerEl ? headerEl.getBoundingClientRect().height : 0;
       const titleH = titleEl ? titleEl.getBoundingClientRect().height : 0;
       const footnoteH = footnoteEl ? footnoteEl.getBoundingClientRect().height : 0;
-      const totalMargin = 80; // reduced to allow more chart height
+      const totalMargin = 80; 
       const height = Math.max(200, window.innerHeight - headerH - titleH - footnoteH - totalMargin);
       const { width } = getChartSize();
       svg.attr("width", width).attr("height", height);
 
       const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
 
-      // Adjust Sankey parameters for mobile
       const nodeWidth = isMobile ? 10 : 16;
-      const nodePadding = isMobile ? 16 : 16;
-      const sankeyHorizontalPadding = isMobile ? 5 : Math.max(40, width * 0.05); // Reduced hPad for mobile
-      const sankeyVerticalPadding = isMobile ? 10 : 40; // Reduced vertical padding for mobile
+      const nodePadding = isMobile ? 12 : 16; 
+      const sankeyHorizontalPadding = isMobile ? 5 : Math.max(20, width * 0.03); 
+      const sankeyVerticalPadding = isMobile ? 10 : 20; 
 
       sankeyGen
         .nodeWidth(nodeWidth)
         .nodePadding(nodePadding)
         .extent([[sankeyHorizontalPadding, sankeyVerticalPadding], [width - sankeyHorizontalPadding, height - sankeyVerticalPadding]]);
       
-      const { nodes: sankeyNodes, links: sankeyLinks } = sankeyGen(graph);
+      const layout = sankeyGen(graph); 
+      currentSankeyLayoutNodes = layout.nodes; 
+      currentSankeyLayoutLinks = layout.links; 
 
-      columnTotals = {1:0, 2:0, 3:0};
-      sankeyNodes.forEach(n => { columnTotals[n.step] = (columnTotals[n.step] || 0) + n.value; });
 
       svg.selectAll("*").remove();
 
       const nodeColorMap = new Map();
-      sankeyNodes.forEach(node => nodeColorMap.set(node.id, node.color));
+      currentSankeyLayoutNodes.forEach(node => nodeColorMap.set(node.id, node.color));
 
       const defs = svg.append("defs");
-      sankeyLinks.forEach((link, i) => {
-        const sourceColor = nodeColorMap.get(link.source.id);
-        const targetColor = nodeColorMap.get(link.target.id);
+      currentSankeyLayoutLinks.forEach((link, i) => {
+        const sourceColor = nodeColorMap.get(link.source.id) || '#ccc';
+        const targetColor = nodeColorMap.get(link.target.id) || '#ccc';
         const gradient = defs.append("linearGradient")
           .attr("id", `gradient-${i}`)
           .attr("gradientUnits", "userSpaceOnUse")
@@ -600,225 +646,275 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
         gradient.append("stop").attr("offset", "100%").attr("stop-color", targetColor).attr("stop-opacity", 0.8);
       });
 
-      const linkGroup = svg.append("g").attr("class", "links");
-      // Expose to global handlers
-      gLinkGroup = linkGroup;
-      linkGroup.selectAll("path")
-        .data(sankeyLinks).enter().append("path")
+      gLinkGroupSelection = svg.append("g").attr("class", "links") 
+        .selectAll("path")
+        .data(currentSankeyLayoutLinks).enter().append("path")
         .attr("class", "link")
         .attr("d", d3.sankeyLinkHorizontal())
         .attr("stroke", (d, i) => `url(#gradient-${i})`)
         .attr("stroke-width", d => Math.max(1, d.width))
-        .on("mouseover", function(event, d) {
-          d3.select(this).classed("highlighted", true);
-          linkGroup.selectAll("path").style("stroke-opacity", l => l === d ? 0.9 : 0.05);
-          nodeGroup.selectAll("rect").style("fill-opacity", n => (n.id === d.source.id || n.id === d.target.id) ? 1 : 0.2);
-          nodeGroup.selectAll("text").style("fill-opacity", n => (n.id === d.source.id || n.id === d.target.id) ? 1 : 0.2);
-          showLinkTooltip(event, d);
+        .style("stroke-opacity", DEFAULT_LINK_OPACITY) 
+        .on("mouseover", function(event, d_link) {
+            if (activeToggledNodeId) {
+                d3.select(this).classed("no-hover-effect", true); 
+                return;
+            }
+            d3.select(this).classed("no-hover-effect", false);
+            d3.select(this).style("stroke-opacity", ACTIVE_LINK_OPACITY).classed("highlighted", true);
+            gLinkGroupSelection.filter(l => l !== d_link).style("stroke-opacity", DIMMED_OPACITY_LOW);
+            
+            gNodeGroup.selectAll('g.node').each(function(n_group) {
+                const isLinkedToHovered = (n_group.id === d_link.source.id || n_group.id === d_link.target.id);
+                const rectOpacity = isLinkedToHovered ? 1 : (n_group.step === 2 ? DIMMED_OPACITY_RECT_STEP2_OFF_PATH : DIMMED_OPACITY_LOW); 
+                const textIsActive = n_group.step === 2 && isLinkedToHovered;
+                
+                d3.select(this).select("rect")
+                  .style("fill-opacity", rectOpacity)
+                  .style("stroke-opacity", rectOpacity); 
+                d3.select(this).selectAll("text.step2-label")
+                  .classed("active", textIsActive);
+                d3.select(this).selectAll("text:not(.step2-label)")
+                  .style("fill-opacity", isLinkedToHovered ? 1 : DIMMED_OPACITY_LOW);
+            });
+            showLinkTooltip(event, d_link);
         })
         .on("mouseout", function() {
-          d3.select(this).classed("highlighted", false);
-          linkGroup.selectAll("path").style("stroke-opacity", 0.4);
-          nodeGroup.selectAll("rect").style("fill-opacity", n => n.step === 2 ? 0.25 : 1);
-          nodeGroup.selectAll("text").style("fill-opacity", 1);
-          hideTooltip();
-        })
-        .on("pointerdown", (event) => {
-          if (window.innerWidth <= MOBILE_BREAKPOINT) {
-            activeToggledNodeId = null;
+            d3.select(this).classed("no-hover-effect", false);
+            if (activeToggledNodeId) return; 
+            resetHighlights(false); 
             hideTooltip();
-            // clear highlights
-            gNodeGroup && gNodeGroup.selectAll('rect')
-              .style('fill-opacity', n => n.step === 2 ? 0.25 : 1)
-              .attr('stroke-width',1)
-              .attr('stroke','var(--border)');
-            gLinkGroup && gLinkGroup.selectAll('path').style('stroke-opacity',0.4);
-            d3.selectAll('text.step2').classed('active', false);
-          }
+        })
+        .on("pointerdown", (event) => { 
+            activeToggledNodeId = null; 
+            hideTooltip();
+            resetHighlights(false); 
         });
 
-      const nodeGroup = svg.append("g").attr("class", "nodes");
-      // Expose to global handlers
-      gNodeGroup = nodeGroup;
-      const nodeSelection = nodeGroup.selectAll("g")
-        .data(sankeyNodes).enter().append("g")
+      gNodeGroup = svg.append("g").attr("class", "nodes");
+      const nodeSelection = gNodeGroup.selectAll("g.node") 
+        .data(currentSankeyLayoutNodes).enter().append("g")
         .attr("class", "node")
         .attr("transform", d => `translate(${d.x0},${d.y0})`);
 
       nodeSelection.append("rect")
         .attr("width", d => d.x1 - d.x0)
         .attr("height", d => d.y1 - d.y0)
-        .attr("rx", isMobile ? 4 : 6) // Smaller radius for mobile
+        .attr("rx", isMobile ? 4 : 6)
         .attr("ry", isMobile ? 4 : 6)
-        .attr("fill", d => d.color)
-        .attr("fill-opacity", d => d.step === 2 ? 0.25 : 1)
+        .attr("fill", d => d.color || '#ccc')
+        .style("fill-opacity", d => d.step === 2 ? DEFAULT_STEP2_OPACITY : 1) 
+        .style("stroke-opacity", d => d.step === 2 ? DEFAULT_STEP2_OPACITY : 1) 
         .attr("stroke", 'var(--border)')
-        .attr("stroke-width", 1)
-        .on("mouseover", function(event, d) {
-          const relatedIds = new Set([d.id]);
-          const firstHop = [];
-          sankeyLinks.forEach(l => {
-            if (l.source.id === d.id) { relatedIds.add(l.target.id); firstHop.push(l.target.id); }
-            if (l.target.id === d.id) { relatedIds.add(l.source.id); firstHop.push(l.source.id); }
-          });
-          sankeyLinks.forEach(l => {
-            if (firstHop.includes(l.source.id)) relatedIds.add(l.target.id);
-            if (firstHop.includes(l.target.id)) relatedIds.add(l.source.id);
-          });
-          d3.select(this).attr("stroke-width", 2).attr("stroke", 'var(--accent-blue)');
-          linkGroup.selectAll("path").style("stroke-opacity", l => (relatedIds.has(l.source.id) && relatedIds.has(l.target.id)) ? 0.9 : 0.05);
-          nodeGroup.selectAll("rect").style("fill-opacity", n => relatedIds.has(n.id) ? 1 : (n.step === 2 ? 0.05 : 0.1));
-          nodeGroup.selectAll("text").style("fill-opacity", n => relatedIds.has(n.id) ? 1 : 0.1);
-          // --- Begin: step-2 label activation for mobile ---
-          const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
-          d3.selectAll('text.step2').classed('active', false);
-
-          if (isMobile && (d.step === 1 || d.step === 3)) {
-            // Find related step-2 node ids
-            const relatedStep2Ids = new Set();
-            sankeyLinks.forEach(l => {
-              if (d.step === 1 && l.source.id === d.id && l.target.step === 2) relatedStep2Ids.add(l.target.id);
-              if (d.step === 3 && l.target.id === d.id && l.source.step === 2) relatedStep2Ids.add(l.source.id);
-            });
-            // Activate only those
-            d3.selectAll('g.node').each(function(n) {
-              if (n.step === 2 && relatedStep2Ids.has(n.id)) {
-                d3.select(this).selectAll('text.step2').classed('active', true);
-              }
-            });
-          }
-          // --- End: step-2 label activation for mobile ---
-          showNodeTooltip(event, d);
-        })
-        .on("mouseout", function() {
-          d3.select(this).attr("stroke-width", 1).attr("stroke", 'var(--border)');
-          linkGroup.selectAll("path").style("stroke-opacity", 0.4);
-          nodeGroup.selectAll("rect").style("fill-opacity", n => n.step === 2 ? 0.25 : 1);
-          nodeGroup.selectAll("text").style("fill-opacity", 1);
-          // --- Begin: step-2 label deactivation for mobile ---
-          if (window.innerWidth <= MOBILE_BREAKPOINT) {
-            d3.selectAll('text.step2').classed('active', false);
-          }
-          // --- End: step-2 label deactivation for mobile ---
-          hideTooltip();
-        });
-
-      // Pointer/tap handlers for node tap-to-toggle on mobile
-      nodeSelection
-        .on("pointerdown", (event, d) => {
-          const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
-          if (isMobile && activeToggledNodeId === d.id) {
-            // second tap on same node: hide
-            activeToggledNodeId = null;
-            highlightNode(event, d, false);
-            hideTooltip();
-          } else {
-            // first tap or different node: show
-            activeToggledNodeId = d.id;
-            highlightNode(event, d, true);
-            showNodeTooltip(event, d);
-          }
-        })
-        .on("pointerleave", (event, d) => {
-          const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
-          if (!isMobile) {
-            activeToggledNodeId = null;
-            highlightNode(event, d, false);
-            hideTooltip();
-          }
-        });
-
-      // Helper for node highlight logic (for tap-to-toggle and pointer)
-      function highlightNode(event, d, show) {
-        const relatedIds = new Set([d.id]);
-        const firstHop = [];
-        sankeyLinks.forEach(l => {
-          if (l.source.id === d.id) { relatedIds.add(l.target.id); firstHop.push(l.target.id); }
-          if (l.target.id === d.id) { relatedIds.add(l.source.id); firstHop.push(l.source.id); }
-        });
-        sankeyLinks.forEach(l => {
-          if (firstHop.includes(l.source.id)) relatedIds.add(l.target.id);
-          if (firstHop.includes(l.target.id)) relatedIds.add(l.source.id);
-        });
-        nodeGroup.selectAll("rect")
-          .style("fill-opacity", n => show ? (relatedIds.has(n.id) ? 1 : (n.step === 2 ? 0.05 : 0.1)) : (n.step === 2 ? 0.25 : 1));
-        nodeGroup.selectAll("text")
-          .style("fill-opacity", n => show ? (relatedIds.has(n.id) ? 1 : 0.1) : 1);
-        linkGroup.selectAll("path")
-          .style("stroke-opacity", l => show ? ((relatedIds.has(l.source.id) && relatedIds.has(l.target.id)) ? 0.9 : 0.05) : 0.4);
-        nodeGroup.selectAll("rect")
-          .attr("stroke-width", n => n.id === d.id && show ? 2 : 1)
-          .attr("stroke", n => n.id === d.id && show ? 'var(--accent-blue)' : 'var(--border)');
-        // step-2 label activation for mobile
-        const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
-        d3.selectAll('text.step2').classed('active', false);
-        if (isMobile && (d.step === 1 || d.step === 3) && show) {
-          // Find related step-2 node ids
-          const relatedStep2Ids = new Set();
-          sankeyLinks.forEach(l => {
-            if (d.step === 1 && l.source.id === d.id && l.target.step === 2) relatedStep2Ids.add(l.target.id);
-            if (d.step === 3 && l.target.id === d.id && l.source.step === 2) relatedStep2Ids.add(l.source.id);
-          });
-          // Activate only those
-          d3.selectAll('g.node').each(function(n) {
-            if (n.step === 2 && relatedStep2Ids.has(n.id)) {
-              d3.select(this).selectAll('text.step2').classed('active', true);
+        .attr("stroke-width", 1);
+        
+      nodeSelection 
+        .on("mouseover", function(event, d_node) {
+            const rect = d3.select(this).select("rect");
+            if (activeToggledNodeId && activeToggledNodeId !== d_node.id) {
+                rect.classed("no-hover-effect", true); 
+                return;
             }
-          });
+            rect.classed("no-hover-effect", false); 
+            if (!activeToggledNodeId) { 
+                applyHighlightLogic(d_node, true); 
+            }
+            showNodeTooltip(event, d_node);
+        })
+        .on("mouseout", function(event, d_node) {
+            d3.select(this).select("rect").classed("no-hover-effect", false);
+            if (activeToggledNodeId) return; 
+            resetHighlights(false);
+            hideTooltip();
+        })
+        .on("pointerdown", (event, d_node) => {
+          event.stopPropagation(); 
+          if (activeToggledNodeId === d_node.id) { 
+            activeToggledNodeId = null;
+            resetHighlights(true); 
+            hideTooltip();
+          } else { 
+            activeToggledNodeId = d_node.id;
+            applyHighlightLogic(d_node, true); 
+            showNodeTooltip(event, d_node);
+          }
+           gNodeGroup.selectAll('rect').classed('no-hover-effect', !!activeToggledNodeId);
+           gLinkGroupSelection.classed('no-hover-effect', !!activeToggledNodeId);
+        });
+
+    function resetHighlights(isToggleOff) {
+        gLinkGroupSelection
+            .style("stroke-opacity", DEFAULT_LINK_OPACITY)
+            .classed("highlighted", false)
+            .classed("no-hover-effect", false);
+
+        gNodeGroup.selectAll('g.node').each(function(n_group) {
+            const isStep2 = n_group.step === 2;
+            d3.select(this).select("rect")
+                .style("fill-opacity", isStep2 ? DEFAULT_STEP2_OPACITY : 1)
+                .style("stroke-opacity", isStep2 ? DEFAULT_STEP2_OPACITY : 1)
+                .attr("stroke-width", 1)
+                .attr("stroke", 'var(--border)')
+                .classed("no-hover-effect", false);
+            d3.select(this).selectAll("text.step2-label")
+                .classed("active", false);
+            d3.select(this).selectAll("text:not(.step2-label)")
+                .style("fill-opacity", 1);
+        });
+        if (isToggleOff) activeToggledNodeId = null;
+    }
+
+    function getPathElements(d_active) {
+        const pathNodeIds = new Set();
+        const pathLinkObjects = new Set(); // Stores link objects
+
+        if (!d_active) return { nodes: pathNodeIds, links: pathLinkObjects };
+
+        pathNodeIds.add(d_active.id);
+
+        if (d_active.step === 0) { // Col 1 -> highlight connected Col 2
+            currentSankeyLayoutLinks.forEach(link => {
+                if (link.source.id === d_active.id) { // Link from d_active (Step 0) to Step 1 (Col 2)
+                    pathNodeIds.add(link.target.id);
+                    pathLinkObjects.add(link);
+                }
+            });
+        } else if (d_active.step === 1) { // Col 2 -> highlight connected Col 2, 3, 4
+            currentSankeyLayoutLinks.forEach(link1 => { // Links from d_active (Col 2 / Step 1)
+                if (link1.source.id === d_active.id) { // To Step 2 (Col 3)
+                    pathNodeIds.add(link1.target.id);
+                    pathLinkObjects.add(link1);
+                    currentSankeyLayoutLinks.forEach(link2 => { // From Step 2 (Col 3) children
+                        if (link2.source.id === link1.target.id) { // To Step 3 (Col 4)
+                            pathNodeIds.add(link2.target.id);
+                            pathLinkObjects.add(link2);
+                        }
+                    });
+                }
+            });
+        } else if (d_active.step === 2) { // Col 3 -> highlight connected Col 2, 3, 4
+            currentSankeyLayoutLinks.forEach(link1 => { // Links to d_active (Col 3 / Step 2)
+                if (link1.target.id === d_active.id) { // From Step 1 (Col 2)
+                    pathNodeIds.add(link1.source.id);
+                    pathLinkObjects.add(link1);
+                }
+            });
+            currentSankeyLayoutLinks.forEach(link2 => { // Links from d_active (Col 3 / Step 2)
+                if (link2.source.id === d_active.id) { // To Step 3 (Col 4)
+                    pathNodeIds.add(link2.target.id);
+                    pathLinkObjects.add(link2);
+                }
+            });
+        } else if (d_active.step === 3) { // Col 4 -> highlight connected Col 2, 3, 4
+            currentSankeyLayoutLinks.forEach(link1 => { // Links to d_active (Col 4 / Step 3)
+                if (link1.target.id === d_active.id) { // From Step 2 (Col 3)
+                    pathNodeIds.add(link1.source.id);
+                    pathLinkObjects.add(link1);
+                    currentSankeyLayoutLinks.forEach(link2 => { // Links to these Step 2 (Col 3) parents
+                        if (link2.target.id === link1.source.id) { // From Step 1 (Col 2)
+                            pathNodeIds.add(link2.source.id);
+                            pathLinkObjects.add(link2);
+                        }
+                    });
+                }
+            });
         }
-      }
+        return { nodes: pathNodeIds, links: pathLinkObjects };
+    }
+      
+    function applyHighlightLogic(d_active, show) {
+        if (!show) { // Should be handled by resetHighlights or mouseout logic for links
+            resetHighlights(false);
+            return;
+        }
+
+        const { nodes: pathNodeIds, links: pathLinkObjects } = getPathElements(d_active);
+
+        gNodeGroup.selectAll('g.node').each(function(n_group) {
+            const rect = d3.select(this).select("rect");
+            const step2Texts = d3.select(this).selectAll("text.step2-label");
+            const otherTexts = d3.select(this).selectAll("text:not(.step2-label)");
+
+            const isNodeOnPath = pathNodeIds.has(n_group.id);
+            
+            let targetRectOpacity, targetTextOpacityGeneral, targetStep2LabelActive;
+
+            if (isNodeOnPath) {
+                targetRectOpacity = 1;
+                targetTextOpacityGeneral = 1;
+                targetStep2LabelActive = n_group.step === 2;
+            } else { // Node is NOT on the specific path for this interaction
+                targetRectOpacity = (n_group.step === 2) ? DIMMED_OPACITY_RECT_STEP2_OFF_PATH : DIMMED_OPACITY_LOW;
+                targetTextOpacityGeneral = (n_group.step === 2) ? 0 : DIMMED_OPACITY_LOW; // Hide step2 label text, dim other
+                targetStep2LabelActive = false;
+            }
+            
+            rect.style("fill-opacity", targetRectOpacity)
+                .style("stroke-opacity", targetRectOpacity) 
+                .attr("stroke-width", n_group.id === d_active.id ? 2 : 1) // d_active always gets thicker border
+                .attr("stroke", n_group.id === d_active.id ? 'var(--accent-blue)' : 'var(--border)');
+            
+            step2Texts.classed("active", targetStep2LabelActive);
+            // For other texts, if it's a step 2 node NOT active, its "other text" (if any, usually none) should also be 0.
+            otherTexts.style("fill-opacity", (n_group.step === 2 && !targetStep2LabelActive) ? 0 : targetTextOpacityGeneral);
+        });
+
+        gLinkGroupSelection.style("stroke-opacity", l => {
+            return pathLinkObjects.has(l) ? ACTIVE_LINK_OPACITY : DIMMED_OPACITY_LOW; 
+        }).classed("highlighted", l => {
+            return pathLinkObjects.has(l);
+        });
+    }
+
 
       nodeSelection.each(function(d) {
-        // Skip drawing step-2 labels on mobile
-        if (window.innerWidth <= MOBILE_BREAKPOINT && d.step === 2) return;
-        const node = d3.select(this);
-        const currentRectWidth = d.x1 - d.x0; // This is the actual nodeWidth from sankeyGen
+        const nodeEl = d3.select(this); 
+        const currentRectWidth = d.x1 - d.x0;
         const nodeHeight = d.y1 - d.y0;
-        
-        const labelPadding = isMobile ? 8 : 15; // Reduced LABEL_PAD for mobile
+        const labelPadding = isMobile ? (d.step === 0 ? 6 : 8) : (d.step === 0 ? 10 : 15); 
         
         let textX, textAnchor;
-
-        if (d.step === 1) { // Labels to the right of Step 1 nodes
+        if (d.step === 0 || d.step === 1) { 
           textX = currentRectWidth + labelPadding;
           textAnchor = "start";
-        } else if (d.step === 3) { // Labels to the left of Step 3 nodes
-          textX = -labelPadding; // Relative to d.x0, so negative to be left
+        } else if (d.step === 3) { 
+          textX = -labelPadding; 
           textAnchor = "end";
-        } else { // Step 2, labels inside node
+        } else { // Step 2 
           textX = currentRectWidth / 2;
           textAnchor = "middle";
         }
         
         const words = d.id.split(' ');
-        // Cap all nodes at 4 words per line on mobile, 6 on desktop.
-        const maxWordsPerLine = isMobile ? 4 : 6;
+        const maxWordsPerLine = (isMobile ? (d.step === 0 ? 3 : 4) : (d.step === 0 ? 4 :6));
         const lines = [];
         for (let i = 0; i < words.length; i += maxWordsPerLine) {
           lines.push(words.slice(i, i + maxWordsPerLine).join(' '));
         }
 
-        const baseFontSize = isMobile ? (d.step === 2 ? "8px" : "10px") : (d.step === 2 ? "9px" : "13px"); // Further refined mobile font sizes
-        const lineDy = isMobile ? (d.step === 2 ? 9 : 10) : 14; // Adjusted line height
+        const baseFontSize = isMobile ? 
+                              (d.step === 2 ? "8px" : (d.step === 0 ? "9px" : "10px")) : 
+                              (d.step === 2 ? "9px" : (d.step === 0 ? "11px" : "13px"));
+        const lineDy = isMobile ? (d.step === 2 ? 9 : (d.step === 0 ? 10 : 10)) : (d.step === 0 ? 12: 14) ;
 
         lines.forEach((line, lineIndex) => {
-          node.append("text")
-            .classed("step2", d.step === 2)
+          nodeEl.append("text")
+            .classed("step2-label", d.step === 2) 
             .attr("x", textX)
-            .attr("y", nodeHeight/2 + (lineIndex - (lines.length -1)/2) * lineDy ) // Adjusted y for proper centering
-            .attr("dy", d.step === 2 ? "0.35em" : (isMobile ? "0.3em" : "0.35em")) // Vertical alignment adjusted for smaller fonts
+            .attr("y", nodeHeight/2 + (lineIndex - (lines.length -1)/2) * lineDy ) 
+            .attr("dy", d.step === 2 ? "0.35em" : (isMobile ? "0.3em" : "0.35em")) 
             .attr("text-anchor", textAnchor)
             .style("font-size", baseFontSize)
-            .style("font-weight", d.step === 2 ? "400" : "600")
-            .style("fill", d.step === 2 ? (isMobile ? "#B0B2B3" : "#C6C8C9") : "#F8FAFC")
-            .style("text-shadow", "1px 1px 1px rgba(0,0,0,0.7)") // Slightly reduced shadow for smaller fonts
+            .style("font-weight", (d.step === 2 || d.step === 0) ? "400" : "600") 
+            .style("fill", d.step === 2 ? (isMobile ? "#B0B2B3" : "#C6C8C9") : (d.step === 0 ? "#D1D5DB" : "#F8FAFC")) 
+            .style("text-shadow", "1px 1px 1px rgba(0,0,0,0.7)")
+            .style("fill-opacity", d.step !== 2 ? 1 : null) 
             .text(line);
         });
       });
-      // updateStats(); // Call if you implement the stats panel
     }
 
     function formatCurrency(value) {
+      if (value === undefined || value === null) return '-';
       return (value / 1e6).toFixed(1) + ' nghìn tỷ VNĐ';
     }
 
@@ -832,42 +928,17 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
           ${formatCurrency(d.value)}
         </div>
         <div style="font-size:${isMobile ? '11px' : '13px'};color:#F59E0B;margin-top:3px;">
-          ${(d.value / grandTotal * 100).toFixed(1)}% tổng chi phí y tế
+          ${grandTotal > 0 ? (d.value / grandTotal * 100).toFixed(1) + '% tổng chi phí y tế' : 'N/A'}
         </div>
       `);
-      // Position tooltip avoiding edge cut-off
-      const tooltipNode = tooltip.node();
-      const { width: tipW, height: tipH } = tooltipNode.getBoundingClientRect();
-      const pageX = event.pageX;
-      const pageY = event.pageY;
-      const margin = 10;
-      let leftPos = pageX, transformX = "-50%";
-      let topPos = pageY;
-      // Right overflow
-      if (pageX + tipW/2 > window.innerWidth - margin) {
-        leftPos = window.innerWidth - tipW - margin;
-        transformX = "0%";
-      }
-      // Left overflow
-      else if (pageX - tipW/2 < margin) {
-        leftPos = margin;
-        transformX = "0%";
-      }
-      // Top overflow (tooltip would go above viewport)
-      if (pageY - tipH < margin) {
-        topPos = pageY + margin;
-      }
-      tooltip
-        .style("left", leftPos + "px")
-        .style("top", topPos + "px")
-        .style("transform", `translateX(${transformX})`)
-        .classed("show", true);
+      positionTooltip(event, tooltip);
+      tooltip.classed("show", true);
     }
 
     function showNodeTooltip(event, d) {
       const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
       const desc = extraInfo[d.id];
-      const nodePercent = ((d.value / grandTotal) * 100).toFixed(1);
+      const nodePercent = grandTotal > 0 && d.value !== undefined ? ((d.value / grandTotal) * 100).toFixed(1) : 'N/A';
       tooltip.html(`
         <div style="font-size:${isMobile ? '13px' : '16px'};font-weight:600;color:#3B82F6;margin-bottom:6px;">
           ${d.id}
@@ -880,48 +951,45 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
         </div>
         ${desc ? `<div style="font-size:${isMobile ? '10px' : '12px'};color:#CBD5E1;margin-top:8px;">${desc}</div>` : ''}
       `);
-      // Position tooltip avoiding edge cut-off
-      const tooltipNode = tooltip.node();
-      const { width: tipW, height: tipH } = tooltipNode.getBoundingClientRect();
-      const pageX = event.pageX;
-      const pageY = event.pageY;
-      const margin = 10;
-      let leftPos = pageX, transformX = "-50%";
-      let topPos = pageY;
-      // Right overflow
-      if (pageX + tipW/2 > window.innerWidth - margin) {
-        leftPos = window.innerWidth - tipW - margin;
-        transformX = "0%";
-      }
-      // Left overflow
-      else if (pageX - tipW/2 < margin) {
-        leftPos = margin;
-        transformX = "0%";
-      }
-      // Top overflow (tooltip would go above viewport)
-      if (pageY - tipH < margin) {
-        topPos = pageY + margin;
-      }
-      tooltip
-        .style("left", leftPos + "px")
-        .style("top", topPos + "px")
-        .style("transform", `translateX(${transformX})`)
-        .classed("show", true);
+      positionTooltip(event, tooltip);
+      tooltip.classed("show", true);
+    }
+    
+    function positionTooltip(event, tooltipElement) {
+        const tooltipNode = tooltipElement.node();
+        if (!tooltipNode) return;
+        const { width: tipW, height: tipH } = tooltipNode.getBoundingClientRect();
+        const pageX = event.pageX;
+        const pageY = event.pageY;
+        const margin = 10;
+        let leftPos = pageX, transformX = "-50%";
+        let topPos = pageY; 
+
+        if (pageX + tipW / 2 > window.innerWidth - margin) { 
+            leftPos = window.innerWidth - tipW - margin;
+            transformX = "0%";
+        } else if (pageX - tipW / 2 < margin) { 
+            leftPos = margin;
+            transformX = "0%";
+        }
+
+        if (pageY - tipH - margin < 0) { 
+            topPos = pageY + margin + 15; 
+             tooltipElement.style("transform", `translate(${transformX}, 0)`);
+        } else {
+            topPos = pageY; 
+            tooltipElement.style("transform", `translate(${transformX}, calc(-100% - 10px))`);
+        }
+        
+        tooltipElement
+            .style("left", leftPos + "px")
+            .style("top", topPos + "px");
     }
 
     function hideTooltip() {
       tooltip.classed("show", false);
     }
 
-    // function updateStats() { // Example, if you add the HTML for these IDs
-    //   const sumOfLinks = grandTotal;
-    //   const totalBillion = (sumOfLinks / 1e6).toFixed(1);
-    //   if(document.getElementById('total-value')) document.getElementById('total-value').textContent = totalBillion;
-    //   if(document.getElementById('node-count')) document.getElementById('node-count').textContent = graph.nodes.length;
-    //   if(document.getElementById('flow-count')) document.getElementById('flow-count').textContent = graph.links.length;
-    // }
-
-    // CHE comparison tooltip
     const cheElem = document.getElementById('che-amount');
     const cheTooltipContent = `
       <div style="font-size:14px; color:#F8FAFC;">
@@ -929,50 +997,30 @@ Viện trợ ngân sách từ nước ngoài|Chương trình sức khỏe tự n
       </div>`;
     cheElem.addEventListener('pointerenter', event => {
       tooltip.html(cheTooltipContent);
-      const tooltipNode2 = tooltip.node();
-      const { width: tipW2, height: tipH2 } = tooltipNode2.getBoundingClientRect();
       const rect = cheElem.getBoundingClientRect();
-      const margin = 10;
-      let left2 = rect.left + rect.width/2, top2 = rect.bottom + 8, transformY2 = "-100%";
-      // If too close to top
-      if (top2 - tipH2 < margin) {
-        transformY2 = "0%";
-        top2 = rect.bottom + margin;
-      }
-      // Horizontal overflow
-      if (left2 + tipW2/2 > window.innerWidth - margin) left2 = window.innerWidth - tipW2 - margin;
-      else if (left2 - tipW2/2 < margin) left2 = margin;
       tooltip
-        .style("left", left2 + "px")
-        .style("top", top2 + "px")
-        .style("transform", `translate(-50%, ${transformY2})`)
+        .style("left", (rect.left + rect.width / 2) + "px")
+        .style("top", (rect.bottom + 8) + "px")
+        .style("transform", 'translate(-50%, 0)') 
         .classed("show", true);
     });
     cheElem.addEventListener('pointerleave', () => {
       tooltip.classed("show", false);
     });
 
-    // Hide tooltip on mobile when tapping outside a node or tooltip
     document.addEventListener('pointerdown', (e) => {
-      if (window.innerWidth <= MOBILE_BREAKPOINT && activeToggledNodeId) {
-        const clickedInsideNode = e.target.closest('g.node');
-        const clickedInsideTooltip = e.target.closest('#tooltip');
-        const clickedOnChe = e.target.id === 'che-amount';
-        if (!clickedInsideNode && !clickedInsideTooltip && !clickedOnChe) {
-          activeToggledNodeId = null;
-          hideTooltip();
-          // Clear any highlights
-          gNodeGroup && gNodeGroup.selectAll('rect')
-            .style('fill-opacity', n => n.step===2 ? 0.25 : 1)
-            .attr('stroke-width',1).attr('stroke','var(--border)');
-          gLinkGroup && gLinkGroup.selectAll('path').style('stroke-opacity',0.4);
-          // Remove active class from step2 labels
-          d3.selectAll('text.step2').classed('active', false);
+      if (activeToggledNodeId) {
+        const clickedInsideNodeG = e.target.closest('g.node');
+        const clickedInsideTooltipTrigger = e.target.closest('.che-underline');
+
+        if (!clickedInsideNodeG && !clickedInsideTooltipTrigger) {
+             resetHighlights(true); 
+             hideTooltip();
         }
       }
     });
 
-    updateChart(); // Initial chart rendering
+    updateChart(); 
   })();
   </script>
 </body>
